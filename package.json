@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Simple address search page",
   "scripts": {
-    "test": "node_modules/.bin/jest"
+    "test": "jest"
   },
   "devDependencies": {
     "jest": "^29.0.0",
