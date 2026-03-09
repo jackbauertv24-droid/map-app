@@ -1,0 +1,12 @@
+{
+  "name": "map-app",
+  "version": "1.0.0",
+  "description": "Simple address search page",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "jsdom": "^24.0.0"
+  }
+}
