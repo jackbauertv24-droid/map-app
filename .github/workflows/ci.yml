@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: List repo files
+        run: ls -R
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
