@@ -21,7 +21,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm ci                     # installs both dependencies + devDependencies
+        run: npm install                     # installs both dependencies + devDependencies
 
       - name: Debug - Show Node and npm versions
         run: |
