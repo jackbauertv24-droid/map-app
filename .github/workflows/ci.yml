@@ -20,8 +20,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps --no-audit                     # installs both dependencies + devDependencies
+- name: Install Yarn
+  run: npm i -g yarn
+- name: Install dependencies with Yarn
+  run: yarn install --ignore-engines                     # installs both dependencies + devDependencies
 
       - name: Debug - Show Node and npm versions
         run: |
@@ -43,5 +45,5 @@ jobs:
       - name: Debug - npm list installed packages (depth 0)
         run: npm list --depth=0
 
-      - name: Run tests
-        run: npm test
+- name: Run tests
+  run: yarn test
