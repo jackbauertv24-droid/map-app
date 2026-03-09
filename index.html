@@ -17,7 +17,36 @@
         <p>🚧  Placeholder – real map will be added soon 🚧</p>
     </header>
     <main>
-        <p>The interactive map will live here. When the next feature is added you’ll see a world map, a search bar, and live data.</p>
+        <div style="text-align:center; max-width:600px; margin:auto;">
+            <h2>Find a location</h2>
+            <input id="searchInput" type="text" placeholder="Enter address" style="width:70%; padding:0.5rem; font-size:1rem;"/>
+            <button id="searchBtn" style="padding:0.5rem 1rem; font-size:1rem; margin-left:0.5rem;">Search</button>
+            <div id="result" style="margin-top:1rem; font-weight:bold; color:#2c3e50;"></div>
+        </div>
+        <script>
+            // Simple geocoding using Nominatim (free OSM service)
+            document.getElementById('searchBtn').addEventListener('click', () => {
+                const query = document.getElementById('searchInput').value.trim();
+                const resultDiv = document.getElementById('result');
+                if (!query) { resultDiv.textContent = 'Please enter an address.'; return; }
+                resultDiv.textContent = 'Searching...';
+                const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+                fetch(url, { headers: { 'Accept-Language': 'en' } })
+                    .then(resp => resp.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            const place = data[0];
+                            resultDiv.textContent = `Found: ${place.display_name}\nLatitude: ${place.lat}, Longitude: ${place.lon}`;
+                        } else {
+                            resultDiv.textContent = 'No results found.';
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        resultDiv.textContent = 'Error while searching.';
+                    });
+            });
+        </script>
     </main>
 </body>
 </html>
