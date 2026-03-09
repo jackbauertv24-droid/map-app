@@ -7,9 +7,12 @@
     <style>
         body {font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin:0; padding:0; background:#f7f7f7; color:#333; display:flex; flex-direction:column; min-height:100vh;}
         header {background:#2c3e50; color:#fff; padding:1rem; text-align:center;}
-        main {flex:1; display:flex; align-items:center; justify-content:center; padding:2rem;}
+        main {flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:2rem;}
         a {color:#0066cc;}
+        #map { width:100%; height:400px; max-width:600px; margin-top:1rem; }
     </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-sA+e/6xuzB9/6hgmu6bZ+lhn/6fB1ipB6eCwZyeZ6Po=" crossorigin=""/>
 </head>
 <body>
     <header>
@@ -22,8 +25,16 @@
             <input id="searchInput" type="text" placeholder="Enter address" style="width:70%; padding:0.5rem; font-size:1rem;"/>
             <button id="searchBtn" style="padding:0.5rem 1rem; font-size:1rem; margin-left:0.5rem;">Search</button>
             <div id="result" style="margin-top:1rem; font-weight:bold; color:#2c3e50;"></div>
+            <div id="map"></div>
         </div>
         <script>
+            // Initialize Leaflet map
+            const map = L.map('map').setView([0,0],2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+            let marker; // will hold the result marker
+
             // Simple geocoding using Nominatim (free OSM service)
             document.getElementById('searchBtn').addEventListener('click', () => {
                 const query = document.getElementById('searchInput').value.trim();
@@ -37,6 +48,11 @@
                         if (data && data.length > 0) {
                             const place = data[0];
                             resultDiv.textContent = `Found: ${place.display_name}\nLatitude: ${place.lat}, Longitude: ${place.lon}`;
+                            const lat = parseFloat(place.lat);
+                            const lon = parseFloat(place.lon);
+                            if (marker) { map.removeLayer(marker); }
+                            marker = L.marker([lat, lon]).addTo(map);
+                            map.setView([lat, lon], 14);
                         } else {
                             resultDiv.textContent = 'No results found.';
                         }
@@ -47,6 +63,8 @@
                     });
             });
         </script>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+                integrity="sha256-o9N1f4hB5KV4PXZ3Zz5TPkzFHSWFSzJ6+fK/a4+M85U=" crossorigin=""></script>
     </main>
 </body>
 </html>
