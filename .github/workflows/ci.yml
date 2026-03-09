@@ -21,7 +21,30 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci                     # installs both dependencies + devDependencies
+
+      - name: Debug - Show Node and npm versions
+        run: |
+          echo "Node version: $(node -v)"
+          echo "npm version: $(npm -v)"
+
+      - name: Debug - List project root files
+        run: ls -R .
+
+      - name: Debug - List node_modules/.bin contents
+        run: |
+          echo "Listing node_modules/.bin"
+          ls -l node_modules/.bin
+
+      - name: Debug - Verify jest binary existence
+        run: |
+          if [ -f node_modules/.bin/jest ]; then echo "Jest binary found"; else echo "Jest binary NOT found"; fi
+
+      - name: Debug - npm list installed packages (depth 0)
+        run: npm list --depth=0
+
+      - name: Run tests
+        run: npm test
 
       - name: Run tests
         run: npm test
