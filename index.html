@@ -30,13 +30,20 @@
                 const resultDiv = document.getElementById('result');
                 if (!query) { resultDiv.textContent = 'Please enter an address.'; return; }
                 resultDiv.textContent = 'Searching...';
-                const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+                const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(query)}`;
                 fetch(url, { headers: { 'Accept-Language': 'en' } })
                     .then(resp => resp.json())
                     .then(data => {
                         if (data && data.length > 0) {
-                            const place = data[0];
-                            resultDiv.textContent = `Found: ${place.display_name}\nLatitude: ${place.lat}, Longitude: ${place.lon}`;
+                            // Build a list of results
+                            let html = '';
+                            data.forEach((place, idx) => {
+                                html += `<div style="margin-bottom:0.5rem;">
+                                            <strong>Result ${idx + 1}:</strong> ${place.display_name}<br/>
+                                            Latitude: ${place.lat}, Longitude: ${place.lon}
+                                         </div>`;
+                            });
+                            resultDiv.innerHTML = html;
                         } else {
                             resultDiv.textContent = 'No results found.';
                         }
