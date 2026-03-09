@@ -43,5 +43,5 @@ jobs:
       - name: Debug - npm list installed packages (depth 0)
         run: npm list --depth=0
 
-- name: Run tests
-  run: npm test
+      - name: Run tests
+        run: npm test
