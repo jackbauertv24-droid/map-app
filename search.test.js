@@ -180,4 +180,60 @@ describe('Search Functionality', () => {
     expect(resultDiv.innerHTML).not.toContain('<script>');
     expect(resultDiv.innerHTML).toContain('&lt;script&gt;');
   });
+
+  test('triggers search when Enter key is pressed', async () => {
+    const mockResults = [
+      { display_name: 'Paris, France', lat: '48.8566', lon: '2.3522' }
+    ];
+
+    window.fetch = jest.fn().mockResolvedValue({
+      json: () => Promise.resolve(mockResults)
+    });
+
+    const searchInput = document.getElementById('searchInput');
+    const resultDiv = document.getElementById('result');
+
+    searchInput.value = 'Paris';
+    searchInput.focus();
+    
+    const enterEvent = new window.KeyboardEvent('keypress', {
+      key: 'Enter',
+      code: 'Enter',
+      keyCode: 13,
+      which: 13,
+      bubbles: true
+    });
+    searchInput.dispatchEvent(enterEvent);
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    expect(resultDiv.innerHTML).toContain('Paris, France');
+    expect(window.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not trigger search when non-Enter key is pressed', async () => {
+    window.fetch = jest.fn().mockResolvedValue({
+      json: () => Promise.resolve([])
+    });
+
+    const searchInput = document.getElementById('searchInput');
+    const resultDiv = document.getElementById('result');
+
+    searchInput.value = 'Paris';
+    searchInput.focus();
+    
+    const spaceEvent = new window.KeyboardEvent('keypress', {
+      key: ' ',
+      code: 'Space',
+      keyCode: 32,
+      which: 32,
+      bubbles: true
+    });
+    searchInput.dispatchEvent(spaceEvent);
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    expect(window.fetch).not.toHaveBeenCalled();
+    expect(resultDiv.textContent).not.toBe('Searching...');
+  });
 });

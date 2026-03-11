@@ -25,7 +25,7 @@
         </div>
         <script>
             // Simple geocoding using Nominatim (free OSM service)
-            document.getElementById('searchBtn').addEventListener('click', () => {
+            function performSearch() {
                 const query = document.getElementById('searchInput').value.trim();
                 const resultDiv = document.getElementById('result');
                 if (!query) { resultDiv.textContent = 'Please enter an address.'; return; }
@@ -57,6 +57,14 @@
                         console.error(err);
                         resultDiv.textContent = 'Error while searching.';
                     });
+            }
+
+            document.getElementById('searchBtn').addEventListener('click', performSearch);
+
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
             });
 
             function escapeHtml(text) {
