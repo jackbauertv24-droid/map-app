@@ -9,42 +9,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      NODE_ENV: development
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'yarn'
 
-      - name: Install Yarn
-        run: npm i -g yarn
+      - run: yarn install --ignore-engines
 
-      - name: Install dependencies with Yarn
-        run: yarn install --ignore-engines   # installs both dependencies + devDependencies
-
-      - name: Debug - Show Node and npm versions
-        run: |
-          echo "Node version: $(node -v)"
-          echo "npm version: $(npm -v)"
-
-      - name: Debug - List project root files
-        run: ls -R .
-
-      - name: Debug - List node_modules/.bin contents
-        run: |
-          echo "Listing node_modules/.bin"
-          ls -l node_modules/.bin
-
-      - name: Debug - Verify jest binary existence
-        run: |
-          if [ -f node_modules/.bin/jest ]; then echo "Jest binary found"; else echo "Jest binary NOT found"; fi
-
-      - name: Debug - npm list installed packages (depth 0)
-        run: npm list --depth=0
-
-      - name: Run tests
-        run: yarn test
+      - run: yarn test
