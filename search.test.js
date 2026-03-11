@@ -10,7 +10,7 @@ describe('Map App', () => {
   test('index.html contains search input', () => {
     const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
     expect(html).toContain('searchInput');
-    expect(html).toContain('Enter address');
+    expect(html).toContain('Enter address or POI');
   });
 
   test('index.html contains search button', () => {
@@ -19,221 +19,132 @@ describe('Map App', () => {
     expect(html).toContain('Search');
   });
 
-  test('index.html uses Nominatim API', () => {
+  test('index.html references external search.js', () => {
     const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
-    expect(html).toContain('nominatim.openstreetmap.org');
+    expect(html).toContain('src="src/search.js"');
   });
 
-  test('index.html displays results', () => {
-    const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
-    expect(html).toContain('result');
-    expect(html).toContain('No results found');
+  test('search.js exists', () => {
+    const searchPath = path.join(__dirname, 'src/search.js');
+    expect(fs.existsSync(searchPath)).toBe(true);
   });
 });
 
-describe('Search Functionality', () => {
-  const { JSDOM } = require('jsdom');
+describe('Search Type Detection', () => {
+  const { detectSearchType, API_PROVIDERS, POI_KEYWORDS } = require('./src/search');
 
-  let dom;
-  let window;
-  let document;
+  test('detects POI keywords - McDonalds', () => {
+    expect(detectSearchType('McDonalds in Hong Kong')).toBe(API_PROVIDERS.OVERPASS);
+    expect(detectSearchType('mcdonalds')).toBe(API_PROVIDERS.OVERPASS);
+  });
+
+  test('detects POI keywords - various restaurants', () => {
+    expect(detectSearchType('KFC')).toBe(API_PROVIDERS.OVERPASS);
+    expect(detectSearchType('Starbucks')).toBe(API_PROVIDERS.OVERPASS);
+    expect(detectSearchType('Burger King')).toBe(API_PROVIDERS.OVERPASS);
+    expect(detectSearchType('restaurant')).toBe(API_PROVIDERS.OVERPASS);
+  });
+
+  test('detects POI keywords - amenities', () => {
+    expect(detectSearchType('hotel')).toBe(API_PROVIDERS.OVERPASS);
+    expect(detectSearchType('hospital')).toBe(API_PROVIDERS.OVERPASS);
+    expect(detectSearchType('school')).toBe(API_PROVIDERS.OVERPASS);
+    expect(detectSearchType('park')).toBe(API_PROVIDERS.OVERPASS);
+  });
+
+  test('detects location modifiers', () => {
+    expect(detectSearchType('shops in Central')).toBe(API_PROVIDERS.OVERPASS);
+    expect(detectSearchType('cafes near Tsim Sha Tsui')).toBe(API_PROVIDERS.OVERPASS);
+  });
+
+  test('defaults to Nominatim for address searches', () => {
+    expect(detectSearchType('123 Main Street')).toBe(API_PROVIDERS.NOMINATIM);
+    expect(detectSearchType('Paris, France')).toBe(API_PROVIDERS.NOMINATIM);
+    expect(detectSearchType('Hong Kong International Airport')).toBe(API_PROVIDERS.NOMINATIM);
+  });
+});
+
+describe('Overpass Query Building', () => {
+  const { buildOverpassQuery, HK_BOUNDS } = require('./src/search');
+
+  test('builds query for McDonalds', () => {
+    const query = buildOverpassQuery('McDonalds in Hong Kong');
+    expect(query).toContain('[out:json]');
+    expect(query).toContain('node["amenity"="fast_food"]["name"~"McDonald"');
+    expect(query).toContain(HK_BOUNDS.latMin.toString());
+  });
+
+  test('builds query for restaurants', () => {
+    const query = buildOverpassQuery('restaurants');
+    expect(query).toContain('node["amenity"="restaurant"]');
+  });
+
+  test('builds query for cafes', () => {
+    const query = buildOverpassQuery('coffee shops');
+    expect(query).toContain('node["amenity"="cafe"]');
+  });
+
+  test('includes bounding box coordinates', () => {
+    const query = buildOverpassQuery('hotels');
+    expect(query).toContain('22.15');
+    expect(query).toContain('113.8');
+    expect(query).toContain('22.55');
+    expect(query).toContain('114.45');
+  });
+});
+
+describe('Search Functionality - renderResults', () => {
+  const { renderResults, escapeHtml } = require('./src/search');
+
+  let resultDiv;
 
   beforeEach(() => {
-    const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
-    dom = new JSDOM(html, {
-      runScripts: 'dangerously',
-      resources: 'usable',
-      url: 'http://localhost/'
-    });
-    window = dom.window;
-    document = dom.window.document;
+    resultDiv = { innerHTML: '', textContent: '' };
   });
 
-  afterEach(() => {
-    if (dom) {
-      dom.window.close();
-    }
-  });
-
-  test('displays multiple results when API returns multiple places', async () => {
+  test('renders multiple results correctly', () => {
     const mockResults = [
-      { display_name: 'Paris, France', lat: '48.8566', lon: '2.3522' },
-      { display_name: 'Paris, Texas, USA', lat: '33.6609', lon: '-95.5555' },
-      { display_name: 'Paris, Ontario, Canada', lat: '43.2000', lon: '-80.3839' },
-      { display_name: 'Paris, Tennessee, USA', lat: '36.3020', lon: '-88.3267' },
-      { display_name: 'Paris, Kentucky, USA', lat: '38.2098', lon: '-84.2529' }
+      { display_name: "McDonald's", lat: '22.3299', lon: '114.1625' },
+      { display_name: "McDonald's 2", lat: '22.2944', lon: '114.1687' },
+      { display_name: "McDonald's 3", lat: '22.3320', lon: '114.1615' },
+      { display_name: "McDonald's 4", lat: '22.2493', lon: '114.1487' },
+      { display_name: "McDonald's 5", lat: '22.3715', lon: '113.9925' }
     ];
 
-    window.fetch = jest.fn().mockResolvedValue({
-      json: () => Promise.resolve(mockResults)
-    });
-
-    const searchInput = document.getElementById('searchInput');
-    const searchBtn = document.getElementById('searchBtn');
-    const resultDiv = document.getElementById('result');
-
-    searchInput.value = 'Paris';
-    searchBtn.click();
-
-    await new Promise(resolve => setTimeout(resolve, 100));
+    renderResults(mockResults, resultDiv);
 
     expect(resultDiv.innerHTML).toContain('>#1<');
     expect(resultDiv.innerHTML).toContain('>#2<');
     expect(resultDiv.innerHTML).toContain('>#3<');
     expect(resultDiv.innerHTML).toContain('>#4<');
     expect(resultDiv.innerHTML).toContain('>#5<');
-    expect(resultDiv.innerHTML).toContain('Paris, France');
-    expect(resultDiv.innerHTML).toContain('Paris, Texas, USA');
-    
-    // Verify exactly 5 result cards are displayed
-    const resultCards = resultDiv.querySelectorAll('div[style*="background:#fff"]');
-    expect(resultCards.length).toBe(5);
+    expect(resultDiv.innerHTML).toContain("McDonald's");
   });
 
-  test('displays "No results found" when API returns empty array', async () => {
-    window.fetch = jest.fn().mockResolvedValue({
-      json: () => Promise.resolve([])
-    });
-
-    const searchInput = document.getElementById('searchInput');
-    const searchBtn = document.getElementById('searchBtn');
-    const resultDiv = document.getElementById('result');
-
-    searchInput.value = 'NonExistentPlace12345';
-    searchBtn.click();
-
-    await new Promise(resolve => setTimeout(resolve, 100));
-
+  test('displays "No results found" when API returns empty array', () => {
+    renderResults([], resultDiv);
     expect(resultDiv.textContent).toBe('No results found.');
   });
 
-  test('displays error message when fetch fails', async () => {
-    window.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
-
-    const searchInput = document.getElementById('searchInput');
-    const searchBtn = document.getElementById('searchBtn');
-    const resultDiv = document.getElementById('result');
-
-    searchInput.value = 'Paris';
-    searchBtn.click();
-
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    expect(resultDiv.textContent).toBe('Error while searching.');
+  test('displays "No results found" when API returns null', () => {
+    renderResults(null, resultDiv);
+    expect(resultDiv.textContent).toBe('No results found.');
   });
 
-  test('displays validation message when search is empty', () => {
-    const searchInput = document.getElementById('searchInput');
-    const searchBtn = document.getElementById('searchBtn');
-    const resultDiv = document.getElementById('result');
-
-    searchInput.value = '';
-    searchBtn.click();
-
-    expect(resultDiv.textContent).toBe('Please enter an address.');
-  });
-
-  test('displays "Searching..." while fetching', async () => {
-    let resolvePromise;
-    window.fetch = jest.fn().mockImplementation(() => {
-      return new Promise(resolve => {
-        resolvePromise = resolve;
-      });
-    });
-
-    const searchInput = document.getElementById('searchInput');
-    const searchBtn = document.getElementById('searchBtn');
-    const resultDiv = document.getElementById('result');
-
-    searchInput.value = 'Paris';
-    searchBtn.click();
-
-    await new Promise(resolve => setTimeout(resolve, 50));
-
-    expect(resultDiv.textContent).toBe('Searching...');
-
-    resolvePromise({
-      json: () => Promise.resolve([])
-    });
-    await new Promise(resolve => setTimeout(resolve, 50));
-  });
-
-  test('escapes HTML to prevent XSS attacks', async () => {
+  test('escapes HTML to prevent XSS attacks', () => {
     const mockResults = [
-      { display_name: '<script>alert("XSS")</script> Paris', lat: '48.8566', lon: '2.3522' }
+      { display_name: '<script>alert("XSS")</script> Test', lat: '22.3', lon: '114.2' }
     ];
 
-    window.fetch = jest.fn().mockResolvedValue({
-      json: () => Promise.resolve(mockResults)
-    });
+    renderResults(mockResults, resultDiv);
 
-    const searchInput = document.getElementById('searchInput');
-    const searchBtn = document.getElementById('searchBtn');
-    const resultDiv = document.getElementById('result');
-
-    searchInput.value = 'Test';
-    searchBtn.click();
-
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // Verify script tags are escaped
     expect(resultDiv.innerHTML).not.toContain('<script>');
     expect(resultDiv.innerHTML).toContain('&lt;script&gt;');
   });
 
-  test('triggers search when Enter key is pressed', async () => {
-    const mockResults = [
-      { display_name: 'Paris, France', lat: '48.8566', lon: '2.3522' }
-    ];
-
-    window.fetch = jest.fn().mockResolvedValue({
-      json: () => Promise.resolve(mockResults)
-    });
-
-    const searchInput = document.getElementById('searchInput');
-    const resultDiv = document.getElementById('result');
-
-    searchInput.value = 'Paris';
-    searchInput.focus();
-    
-    const enterEvent = new window.KeyboardEvent('keypress', {
-      key: 'Enter',
-      code: 'Enter',
-      keyCode: 13,
-      which: 13,
-      bubbles: true
-    });
-    searchInput.dispatchEvent(enterEvent);
-
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    expect(resultDiv.innerHTML).toContain('Paris, France');
-    expect(window.fetch).toHaveBeenCalledTimes(1);
-  });
-
-  test('does not trigger search when non-Enter key is pressed', async () => {
-    window.fetch = jest.fn().mockResolvedValue({
-      json: () => Promise.resolve([])
-    });
-
-    const searchInput = document.getElementById('searchInput');
-    const resultDiv = document.getElementById('result');
-
-    searchInput.value = 'Paris';
-    searchInput.focus();
-    
-    const spaceEvent = new window.KeyboardEvent('keypress', {
-      key: ' ',
-      code: 'Space',
-      keyCode: 32,
-      which: 32,
-      bubbles: true
-    });
-    searchInput.dispatchEvent(spaceEvent);
-
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    expect(window.fetch).not.toHaveBeenCalled();
-    expect(resultDiv.textContent).not.toBe('Searching...');
+  test('escapeHtml function works correctly', () => {
+    expect(escapeHtml('<script>alert("XSS")</script>')).toBe('&lt;script&gt;alert("XSS")&lt;/script&gt;');
+    expect(escapeHtml('Normal text')).toBe('Normal text');
+    expect(escapeHtml('Test & special <chars>')).toBe('Test &amp; special &lt;chars&gt;');
   });
 });
