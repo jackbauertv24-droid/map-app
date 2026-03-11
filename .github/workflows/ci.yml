@@ -15,8 +15,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'yarn'
+          cache: 'npm'
 
-      - run: yarn install --ignore-engines
+      - run: npm ci
 
-      - run: yarn test
+      - run: npm test
