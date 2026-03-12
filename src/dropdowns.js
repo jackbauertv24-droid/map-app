@@ -1,155 +1,131 @@
 // MTR Dropdown Cascade Logic
 // Handles region -> line -> station selection flow
 
-let MTR_DATA = null;
-let STATION_LOOKUP = null;
-
-// Load MTR data dynamically
-function loadMTRData() {
-  return new Promise((resolve, reject) => {
-    if (typeof MTR_DATA !== 'undefined') {
-      resolve();
-      return;
-    }
-    
-    const script = document.createElement('script');
-    script.src = 'src/mtr-stations.js';
-    script.onload = () => {
-      MTR_DATA = window.MTR_DATA || (typeof module !== 'undefined' && module.exports ? module.exports.MTR_DATA : null);
-      STATION_LOOKUP = window.STATION_LOOKUP || (typeof module !== 'undefined' && module.exports ? module.exports.STATION_LOOKUP : null);
-      resolve();
-    };
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-}
-
 /**
  * Initialize MTR dropdown cascade
  */
-async function initMTRDropdowns() {
-  try {
-    await loadMTRData();
+function initMTRDropdowns() {
+  const MTR_DATA = window.MTR_DATA;
+  
+  if (!MTR_DATA) {
+    console.error('MTR_DATA not loaded. Ensure mtr-stations.js is loaded before dropdowns.js');
+    return;
+  }
+  
+  const regionSelect = document.getElementById('regionSelect');
+  const lineSelect = document.getElementById('lineSelect');
+  const stationSelect = document.getElementById('stationSelect');
+  const radiusSelect = document.getElementById('radiusSelect');
+  
+  if (!regionSelect || !lineSelect || !stationSelect) {
+    console.error('MTR dropdown elements not found');
+    return;
+  }
+  
+  // Region change → populate lines
+  regionSelect.addEventListener('change', () => {
+    const regionKey = regionSelect.value;
     
-    const regionSelect = document.getElementById('regionSelect');
-    const lineSelect = document.getElementById('lineSelect');
-    const stationSelect = document.getElementById('stationSelect');
-    const radiusSelect = document.getElementById('radiusSelect');
-    
-    if (!regionSelect || !lineSelect || !stationSelect) {
-      console.error('MTR dropdown elements not found');
+    if (!regionKey) {
+      lineSelect.disabled = true;
+      stationSelect.disabled = true;
+      lineSelect.innerHTML = '<option value="">Select Line</option>';
+      stationSelect.innerHTML = '<option value="">Select Station</option>';
+      clearStationFilter();
       return;
     }
     
-    // Region change → populate lines
-    regionSelect.addEventListener('change', () => {
-      const regionKey = regionSelect.value;
-      
-      if (!regionKey) {
-        lineSelect.disabled = true;
-        stationSelect.disabled = true;
-        lineSelect.innerHTML = '<option value="">Select Line</option>';
-        stationSelect.innerHTML = '<option value="">Select Station</option>';
-        clearStationFilter();
-        return;
-      }
-      
-      const region = MTR_DATA[regionKey];
-      if (!region) return;
-      
-      // Populate lines for selected region
-      lineSelect.innerHTML = '<option value="">Select Line</option>';
-      Object.keys(region.lines).forEach(lineKey => {
-        const line = region.lines[lineKey];
-        const option = document.createElement('option');
-        option.value = lineKey;
-        option.textContent = line.name;
-        option.dataset.lineKey = lineKey;
-        lineSelect.appendChild(option);
-      });
-      lineSelect.disabled = false;
+    const region = MTR_DATA[regionKey];
+    if (!region) return;
+    
+    // Populate lines for selected region
+    lineSelect.innerHTML = '<option value="">Select Line</option>';
+    Object.keys(region.lines).forEach(lineKey => {
+      const line = region.lines[lineKey];
+      const option = document.createElement('option');
+      option.value = lineKey;
+      option.textContent = line.name;
+      lineSelect.appendChild(option);
+    });
+    lineSelect.disabled = false;
+    stationSelect.disabled = true;
+    stationSelect.innerHTML = '<option value="">Select Station</option>';
+  });
+  
+  // Line change → populate stations
+  lineSelect.addEventListener('change', () => {
+    const regionKey = regionSelect.value;
+    const lineKey = lineSelect.value;
+    
+    if (!regionKey || !lineKey) {
       stationSelect.disabled = true;
       stationSelect.innerHTML = '<option value="">Select Station</option>';
-    });
-    
-    // Line change → populate stations
-    lineSelect.addEventListener('change', () => {
-      const regionKey = regionSelect.value;
-      const lineKey = lineSelect.value;
-      
-      if (!regionKey || !lineKey) {
-        stationSelect.disabled = true;
-        stationSelect.innerHTML = '<option value="">Select Station</option>';
-        clearStationFilter();
-        return;
-      }
-      
-      const region = MTR_DATA[regionKey];
-      const line = region.lines[lineKey];
-      
-      if (!line) return;
-      
-      // Populate stations for selected line
-      stationSelect.innerHTML = '<option value="">Select Station</option>';
-      line.stations.forEach(station => {
-        const option = document.createElement('option');
-        option.value = JSON.stringify({
-          name: station.name,
-          lat: station.lat,
-          lon: station.lon,
-          region: regionKey,
-          line: lineKey
-        });
-        option.textContent = station.name;
-        stationSelect.appendChild(option);
-      });
-      stationSelect.disabled = false;
-    });
-    
-    // Station change → set active filter
-    stationSelect.addEventListener('change', () => {
-      const stationValue = stationSelect.value;
-      
-      if (!stationValue) {
-        clearStationFilter();
-        return;
-      }
-      
-      const station = JSON.parse(stationValue);
-      activeStationFilter = station;
-      
-      const radius = radiusSelect ? radiusSelect.value : DEFAULT_RADIUS_KM;
-      activeRadiusFilter = parseFloat(radius);
-      
-      updateActiveFilterDisplay(station, activeRadiusFilter);
-      
-      // Auto-trigger search if there's a query
-      const searchInput = document.getElementById('searchInput');
-      if (searchInput && searchInput.value.trim()) {
-        const searchBtn = document.getElementById('searchBtn');
-        if (searchBtn) searchBtn.click();
-      }
-    });
-    
-    // Radius change → update active filter
-    if (radiusSelect) {
-      radiusSelect.addEventListener('change', () => {
-        if (activeStationFilter) {
-          activeRadiusFilter = parseFloat(radiusSelect.value);
-          updateActiveFilterDisplay(activeStationFilter, activeRadiusFilter);
-          
-          // Re-trigger search if there's a query
-          const searchInput = document.getElementById('searchInput');
-          if (searchInput && searchInput.value.trim()) {
-            const searchBtn = document.getElementById('searchBtn');
-            if (searchBtn) searchBtn.click();
-          }
-        }
-      });
+      clearStationFilter();
+      return;
     }
     
-  } catch (error) {
-    console.error('Error initializing MTR dropdowns:', error);
+    const region = MTR_DATA[regionKey];
+    const line = region.lines[lineKey];
+    
+    if (!line) return;
+    
+    // Populate stations for selected line
+    stationSelect.innerHTML = '<option value="">Select Station</option>';
+    line.stations.forEach(station => {
+      const option = document.createElement('option');
+      option.value = JSON.stringify({
+        name: station.name,
+        lat: station.lat,
+        lon: station.lon,
+        region: regionKey,
+        line: lineKey
+      });
+      option.textContent = station.name;
+      stationSelect.appendChild(option);
+    });
+    stationSelect.disabled = false;
+  });
+  
+  // Station change → set active filter
+  stationSelect.addEventListener('change', () => {
+    const stationValue = stationSelect.value;
+    
+    if (!stationValue) {
+      clearStationFilter();
+      return;
+    }
+    
+    const station = JSON.parse(stationValue);
+    window.activeStationFilter = station;
+    
+    const radius = radiusSelect ? radiusSelect.value : '1';
+    window.activeRadiusFilter = parseFloat(radius);
+    
+    updateActiveFilterDisplay(station, window.activeRadiusFilter);
+    
+    // Auto-trigger search if there's a query
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput && searchInput.value.trim()) {
+      const searchBtn = document.getElementById('searchBtn');
+      if (searchBtn) searchBtn.click();
+    }
+  });
+  
+  // Radius change → update active filter
+  if (radiusSelect) {
+    radiusSelect.addEventListener('change', () => {
+      if (window.activeStationFilter) {
+        window.activeRadiusFilter = parseFloat(radiusSelect.value);
+        updateActiveFilterDisplay(window.activeStationFilter, window.activeRadiusFilter);
+        
+        // Re-trigger search if there's a query
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput && searchInput.value.trim()) {
+          const searchBtn = document.getElementById('searchBtn');
+          if (searchBtn) searchBtn.click();
+        }
+      }
+    });
   }
 }
 
@@ -157,12 +133,8 @@ async function initMTRDropdowns() {
  * Clear station filter (called from search.js)
  */
 function clearStationFilter() {
-  if (typeof window.activeStationFilter !== 'undefined') {
-    window.activeStationFilter = null;
-  }
-  if (typeof window.activeRadiusFilter !== 'undefined') {
-    window.activeRadiusFilter = 1;
-  }
+  window.activeStationFilter = null;
+  window.activeRadiusFilter = 1;
   
   const filterDiv = document.getElementById('activeFilter');
   if (filterDiv) {

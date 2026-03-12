@@ -23,9 +23,22 @@ const POI_KEYWORDS = [
   'bank', 'atm', 'pharmacy', 'supermarket', 'gym'
 ];
 
-// Current active station filter
-let activeStationFilter = null;
-let activeRadiusFilter = DEFAULT_RADIUS_KM;
+// Current active station filter (shared via window object)
+function getActiveStationFilter() {
+  return window.activeStationFilter || null;
+}
+
+function getActiveRadiusFilter() {
+  return window.activeRadiusFilter || DEFAULT_RADIUS_KM;
+}
+
+function setActiveStationFilter(station) {
+  window.activeStationFilter = station;
+}
+
+function setActiveRadiusFilter(radius) {
+  window.activeRadiusFilter = radius;
+}
 
 /**
  * Calculate bounding box from station center with given radius
@@ -355,8 +368,8 @@ function updateActiveFilterDisplay(station, radius) {
  * Clear station filter
  */
 function clearStationFilter() {
-  activeStationFilter = null;
-  activeRadiusFilter = DEFAULT_RADIUS_KM;
+  setActiveStationFilter(null);
+  setActiveRadiusFilter(DEFAULT_RADIUS_KM);
   
   // Reset dropdowns
   const regionSelect = document.getElementById('regionSelect');
@@ -401,15 +414,17 @@ function initSearch() {
     resultDiv.textContent = 'Searching...';
     
     // Check if query mentions a station
-    let station = activeStationFilter;
+    let station = getActiveStationFilter();
     const detectedStation = detectStationFromQuery(query);
     if (detectedStation) {
       station = detectedStation;
     }
     
-    performSearch(query, station, activeRadiusFilter)
+    const radius = getActiveRadiusFilter();
+    
+    performSearch(query, station, radius)
       .then(results => {
-        renderResults(results, resultDiv, station, activeRadiusFilter);
+        renderResults(results, resultDiv, station, radius);
       })
       .catch(err => {
         console.error('Search error:', err);

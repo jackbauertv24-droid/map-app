@@ -236,7 +236,13 @@ Object.keys(MTR_DATA).forEach(regionKey => {
   });
 });
 
-// Export for use in other modules
+// Export for browser and Node.js
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { MTR_DATA, STATION_LOOKUP };
+}
+
+// Expose to browser global scope
+if (typeof window !== 'undefined') {
+  window.MTR_DATA = MTR_DATA;
+  window.STATION_LOOKUP = STATION_LOOKUP;
 }
