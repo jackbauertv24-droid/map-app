@@ -296,3 +296,121 @@ test.describe('Map App - Performance', () => {
     expect(Date.now() - startTime).toBeLessThan(10000);
   });
 });
+
+test.describe('Map App - Traditional Chinese UI Verification', () => {
+  test.beforeEach(beforeEachTest);
+
+  test('all main UI elements display in Traditional Chinese', async ({ page }) => {
+    await expect(page.locator('h1')).toHaveText('地圖應用程式');
+    await expect(page.locator('header p')).toHaveText('按港鐵站搜尋');
+    await expect(page.locator('#searchBtn')).toHaveText('搜尋');
+    await expect(page.locator('#clearFilter')).toHaveText('清除篩選');
+  });
+
+  test('all dropdown labels display in Traditional Chinese', async ({ page }) => {
+    await expect(page.locator('label[for="regionSelect"]')).toHaveText('地區');
+    await expect(page.locator('label[for="lineSelect"]')).toHaveText('路綫');
+    await expect(page.locator('label[for="stationSelect"]')).toHaveText('車站');
+    await expect(page.locator('label[for="radiusSelect"]')).toHaveText('範圍');
+  });
+
+  test('region dropdown options display in Traditional Chinese', async ({ page }) => {
+    const options = await page.locator('#regionSelect option').allTextContents();
+    expect(options).toContain('全香港');
+    expect(options).toContain('港島');
+    expect(options).toContain('九龍');
+    expect(options).toContain('新界');
+  });
+
+  test('Hong Kong Island lines display in Traditional Chinese', async ({ page }) => {
+    await page.locator('#regionSelect').selectOption('hong_kong_island');
+    const options = await page.locator('#lineSelect option').allTextContents();
+    expect(options).toContain('港島綫');
+    expect(options).toContain('南港島綫');
+    expect(options).toContain('東涌綫');
+  });
+
+  test('Kowloon lines display in Traditional Chinese', async ({ page }) => {
+    await page.locator('#regionSelect').selectOption('kowloon');
+    const options = await page.locator('#lineSelect option').allTextContents();
+    expect(options).toContain('荃灣綫');
+    expect(options).toContain('觀塘綫');
+    expect(options).toContain('屯馬綫');
+    expect(options).toContain('東鐵綫');
+    expect(options).toContain('將軍澳綫');
+    expect(options).toContain('機場快綫');
+  });
+
+  test('New Territories lines display in Traditional Chinese', async ({ page }) => {
+    await page.locator('#regionSelect').selectOption('new_territories');
+    const options = await page.locator('#lineSelect option').allTextContents();
+    expect(options).toContain('屯馬綫');
+    expect(options).toContain('東鐵綫');
+    expect(options).toContain('東涌綫');
+    expect(options).toContain('將軍澳綫');
+    expect(options).toContain('西鐵綫');
+  });
+
+  test('radius dropdown displays in Traditional Chinese', async ({ page }) => {
+    const options = await page.locator('#radiusSelect option').allTextContents();
+    expect(options).toContain('500 米');
+    expect(options).toContain('1 公里');
+    expect(options).toContain('1.5 公里');
+    expect(options).toContain('2 公里');
+    expect(options).toContain('3 公里');
+  });
+
+  test('search input placeholder is in Traditional Chinese', async ({ page }) => {
+    const placeholder = await page.locator('#searchInput').getAttribute('placeholder');
+    expect(placeholder).toBe('輸入地點或地址 (例如：麥當勞，餐廳)');
+  });
+
+  test('filter badge displays in Traditional Chinese', async ({ page }) => {
+    await page.locator('#regionSelect').selectOption('hong_kong_island');
+    await page.locator('#lineSelect').selectOption('island');
+    await page.locator('#stationSelect').selectOption('Central');
+    await page.waitForTimeout(500);
+    
+    const filterText = await page.locator('#activeFilter').textContent();
+    expect(filterText).toContain('搜尋附近：');
+    expect(filterText).toContain('範圍內');
+    expect(filterText).toContain('公里');
+  });
+
+  test('error messages display in Traditional Chinese', async ({ page }) => {
+    await page.locator('#searchBtn').click();
+    await expect(page.locator('#result')).toHaveText('請輸入地址。');
+  });
+
+  test('no results message displays in Traditional Chinese', async ({ page }) => {
+    await page.locator('#searchInput').fill('xyzabc123nonexistent');
+    await page.locator('#searchBtn').click();
+    await page.waitForTimeout(5000);
+    await expect(page.locator('#result')).toContainText('找不到結果');
+  });
+
+  test('distance units display in Traditional Chinese', async ({ page }) => {
+    await page.locator('#regionSelect').selectOption('hong_kong_island');
+    await page.locator('#lineSelect').selectOption('island');
+    await page.locator('#stationSelect').selectOption('Central');
+    await page.locator('#radiusSelect').selectOption('0.5');
+    await page.waitForTimeout(500);
+    await page.locator('#searchInput').fill('McDonalds');
+    await page.locator('#searchBtn').click();
+    await expect(page.locator('#result')).toContainText('米', { timeout: 15000 });
+  });
+
+  test('complete dropdown cascade with Traditional Chinese data', async ({ page }) => {
+    await page.locator('#regionSelect').selectOption('hong_kong_island');
+    await expect(page.locator('#lineSelect')).not.toBeDisabled();
+    
+    await page.locator('#lineSelect').selectOption('island');
+    await expect(page.locator('#stationSelect')).not.toBeDisabled();
+    
+    const stationOptions = await page.locator('#stationSelect option').allTextContents();
+    expect(stationOptions).toContain('Kennedy Town');
+    expect(stationOptions).toContain('Central');
+    expect(stationOptions).toContain('Admiralty');
+    expect(stationOptions).toContain('Chai Wan');
+  });
+});
