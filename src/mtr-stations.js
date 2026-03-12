@@ -176,6 +176,10 @@ const MTR_DATA = {
       east_rail: {
         name: '東鐵綫',
         stations: [
+          { name: '金鐘', lat: 22.2791, lon: 114.1648 },
+          { name: '會展', lat: 22.2819, lon: 114.1749 },
+          { name: '紅磡', lat: 22.3029, lon: 114.1889 },
+          { name: '旺角東', lat: 22.3259, lon: 114.1789 },
           { name: '九龍塘', lat: 22.3379, lon: 114.1739 },
           { name: '大圍', lat: 22.3739, lon: 114.1749 },
           { name: '沙田', lat: 22.3819, lon: 114.1879 },
