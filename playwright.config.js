@@ -13,12 +13,12 @@ module.exports = defineConfig({
     ['json', { outputFile: 'test-results/results.json' }]
   ],
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: process.env.TEST_BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    actionTimeout: 10000,
-    navigationTimeout: 30000,
+    actionTimeout: 15000,
+    navigationTimeout: 45000,
   },
   projects: [
     {
@@ -29,12 +29,6 @@ module.exports = defineConfig({
       },
     },
   ],
-  webServer: {
-    command: 'npx http-server -p 3000 -c-1 --silent',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 60000,
-  },
   outputDir: 'test-results/',
   timeout: 60000,
   expect: {
