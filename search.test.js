@@ -246,84 +246,32 @@ describe('MTR Station Data', () => {
   });
 });
 
-describe('I18N Versioning and Storage Migration', () => {
+describe('I18N - Traditional Chinese Only', () => {
   const I18N = require('./src/i18n');
 
-  beforeEach(() => {
-    localStorage.clear();
+  test('I18N is simplified with Chinese only', () => {
+    expect(I18N.translations).toBeDefined();
+    expect(I18N.translations.appTitle).toBe('地圖應用程式');
+    expect(I18N.translations.searchBtn).toBe('搜尋');
   });
 
-  test('I18N has schemaVersion property', () => {
-    expect(I18N.schemaVersion).toBeDefined();
-    expect(typeof I18N.schemaVersion).toBe('number');
-    expect(I18N.schemaVersion).toBeGreaterThanOrEqual(1);
+  test('I18N.t returns Chinese translations', () => {
+    expect(I18N.t('appTitle')).toBe('地圖應用程式');
+    expect(I18N.t('searchBtn')).toBe('搜尋');
+    expect(I18N.t('noResults')).toBe('找不到結果。');
   });
 
-  test('I18N has _checkAndMigrateStorage method', () => {
-    expect(typeof I18N._checkAndMigrateStorage).toBe('function');
+  test('I18N.t returns key for missing translations', () => {
+    expect(I18N.t('nonexistent')).toBe('nonexistent');
   });
 
-  test('init sets schema version on first run', () => {
-    I18N.init();
-    expect(localStorage.getItem('i18n_schema_version')).toBe('1');
+  test('I18N has no language switching methods', () => {
+    expect(I18N.setLanguage).toBeUndefined();
+    expect(I18N.currentLang).toBeUndefined();
+    expect(I18N.schemaVersion).toBeUndefined();
   });
 
-  test('init defaults to zh-HK when no stored language', () => {
-    I18N.init();
-    expect(I18N.currentLang).toBe('zh-HK');
-  });
-
-  test('migration clears old data and resets to default when version changes', () => {
-    localStorage.setItem('i18n_schema_version', '0');
-    localStorage.setItem('preferredLang', 'en');
-    localStorage.setItem('someOldData', 'value');
-    
-    expect(localStorage.getItem('preferredLang')).toBe('en');
-    expect(localStorage.getItem('someOldData')).toBe('value');
-    
-    I18N.init();
-    
-    expect(localStorage.getItem('i18n_schema_version')).toBe('1');
-    expect(localStorage.getItem('preferredLang')).toBe('zh-HK');
-    expect(localStorage.getItem('someOldData')).toBeNull();
-    expect(I18N.currentLang).toBe('zh-HK');
-  });
-
-  test('migration preserves language when version is current', () => {
-    localStorage.setItem('i18n_schema_version', '1');
-    localStorage.setItem('preferredLang', 'en');
-    
-    I18N.init();
-    
-    expect(I18N.currentLang).toBe('en');
-    expect(localStorage.getItem('preferredLang')).toBe('en');
-  });
-
-  test('migration handles invalid version gracefully', () => {
-    localStorage.setItem('i18n_schema_version', 'invalid');
-    
-    expect(() => I18N.init()).not.toThrow();
-    expect(localStorage.getItem('i18n_schema_version')).toBe('1');
-  });
-
-  test('setLanguage persists user choice', () => {
-    I18N.init();
-    I18N.setLanguage('en');
-    
-    expect(I18N.currentLang).toBe('en');
-    expect(localStorage.getItem('preferredLang')).toBe('en');
-  });
-
-  test('future version upgrade would trigger migration', () => {
-    localStorage.setItem('i18n_schema_version', '1');
-    localStorage.setItem('preferredLang', 'en');
-    
-    I18N.schemaVersion = 2;
-    I18N.init();
-    
-    expect(I18N.currentLang).toBe('zh-HK');
-    expect(localStorage.getItem('preferredLang')).toBe('zh-HK');
-    
-    I18N.schemaVersion = 1;
+  test('I18N.translatePage exists', () => {
+    expect(typeof I18N.translatePage).toBe('function');
   });
 });

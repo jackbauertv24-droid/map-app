@@ -243,15 +243,10 @@ async function searchOverpass(query, bounds = HK_BOUNDS, station = null, radiusK
  * @returns {Promise<Array>} - Array of search results
  */
 async function searchNominatim(query) {
-  // Use Traditional Chinese (zh-HK) as default, or English based on current language
-  const lang = window.I18N && window.I18N.currentLang ? window.I18N.currentLang : 'zh-HK';
-  const acceptLang = lang === 'en' ? 'en' : 'zh';
-  
-  // Restrict search to Hong Kong using viewbox (countrycodes parameter doesn't work reliably)
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&viewbox=113.8,22.15,114.45,22.55&bounded=1&q=${encodeURIComponent(query)}&accept-language=${encodeURIComponent(acceptLang)}`;
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&viewbox=113.8,22.15,114.45,22.55&bounded=1&q=${encodeURIComponent(query)}&accept-language=zh`;
   
   const response = await fetch(url, {
-    headers: { 'Accept-Language': acceptLang }
+    headers: { 'Accept-Language': 'zh' }
   });
   return response.json();
 }
@@ -297,15 +292,12 @@ function escapeHtml(text) {
  * @returns {string} - Formatted distance
  */
 function formatDistance(distanceKm) {
-  const i18n = window.I18N;
-  const lang = i18n ? i18n.currentLang : 'zh-HK';
-  
   if (distanceKm < 1) {
     const meters = Math.round(distanceKm * 1000);
-    return lang === 'en' ? `${meters}m` : `${meters}米`;
+    return `${meters}米`;
   }
   const km = distanceKm.toFixed(1);
-  return lang === 'en' ? `${km}km` : `${km}公里`;
+  return `${km}公里`;
 }
 
 /**
@@ -317,10 +309,9 @@ function formatDistance(distanceKm) {
  */
 function renderResults(results, resultDiv, station = null, radius = null) {
   const i18n = window.I18N;
-  const lang = i18n ? i18n.currentLang : 'zh-HK';
   
   if (!results || results.length === 0) {
-    resultDiv.textContent = i18n ? i18n.t('noResults') : 'No results found.';
+    resultDiv.textContent = i18n ? i18n.t('noResults') : '找不到結果。';
     return;
   }
   
@@ -328,9 +319,9 @@ function renderResults(results, resultDiv, station = null, radius = null) {
   
   // Show active filter info
   if (station) {
-    const searchingText = i18n ? i18n.t('searchingNear') : 'Searching near:';
-    const radiusText = i18n ? i18n.t('radius') : 'radius';
-    const radiusLabel = lang === 'en' ? `${radius}km` : `${radius}公里`;
+    const searchingText = i18n ? i18n.t('searchingNear') : '搜尋附近：';
+    const radiusText = i18n ? i18n.t('radius') : '範圍內';
+    const radiusLabel = radius < 1 ? `${radius * 1000}米` : `${radius}公里`;
     
     html += `<div style="background:#e8f4fd; border:1px solid #3498db; border-radius:4px; padding:0.75rem; margin-bottom:1rem; text-align:left;">
       <div style="color:#2c3e50; font-weight:bold;">
@@ -376,9 +367,10 @@ function updateActiveFilterDisplay(station, radius) {
   const filterStation = document.getElementById('filterStation');
   const filterRadius = document.getElementById('filterRadius');
   
-  if (station && filterDiv) {
+  if (station && filterDiv && filterStation && filterRadius) {
     filterStation.textContent = station.name;
-    filterRadius.textContent = `${radius}km`;
+    const radiusLabel = radius < 1 ? `${radius * 1000} 米` : `${radius} 公里`;
+    filterRadius.textContent = radiusLabel;
     filterDiv.style.display = 'block';
   } else if (filterDiv) {
     filterDiv.style.display = 'none';
@@ -429,11 +421,11 @@ function initSearch() {
     const i18n = window.I18N;
     
     if (!query) {
-      resultDiv.textContent = i18n ? i18n.t('pleaseEnterAddress') : 'Please enter an address.';
+      resultDiv.textContent = i18n ? i18n.t('pleaseEnterAddress') : '請輸入地址。';
       return;
     }
     
-    resultDiv.textContent = i18n ? i18n.t('searching') : 'Searching...';
+    resultDiv.textContent = i18n ? i18n.t('searching') : '搜尋中...';
     
     // Check if query mentions a station
     let station = getActiveStationFilter();
@@ -450,7 +442,7 @@ function initSearch() {
       })
       .catch(err => {
         console.error('Search error:', err);
-        resultDiv.textContent = i18n ? i18n.t('searchError') : 'Error while searching.';
+        resultDiv.textContent = i18n ? i18n.t('searchError') : '搜尋時發生錯誤。';
       });
   }
   

@@ -12,26 +12,23 @@ function t(key) {
   return defaults[key] || key;
 }
 
-function getCurrentLang() {
-  return window.I18N && window.I18N.currentLang ? window.I18N.currentLang : 'zh-HK';
-}
-
 function getLineName(lineKey) {
-  const i18nKey = `line_${lineKey}`;
   if (window.I18N && typeof window.I18N.t === 'function') {
+    const i18nKey = `line_${lineKey}`;
     return window.I18N.t(i18nKey);
   }
   const fallbackNames = {
-    island: 'Island Line',
-    tsuen_wan: 'Tsuen Wan Line',
-    kwun_tong: 'Kwun Tong Line',
-    tuen_ma: 'Tuen Ma Line',
-    tung_chung: 'Tung Chung Line',
-    south_island: 'South Island Line',
-    east_rail: 'East Rail Line',
-    west_rail: 'West Rail Line',
-    tseung_kwan_o: 'Tseung Kwan O Line',
-    airport_express: 'Airport Express'
+    island: '港島綫',
+    tsuen_wan: '荃灣綫',
+    kwun_tong: '觀塘綫',
+    tuen_ma: '屯馬綫',
+    tun_ma: '屯馬綫',
+    tung_chung: '東涌綫',
+    south_island: '南港島綫',
+    east_rail: '東鐵綫',
+    west_rail: '西鐵綫',
+    tseung_kwan_o: '將軍澳綫',
+    airport_express: '機場快綫'
   };
   return fallbackNames[lineKey] || lineKey;
 }
@@ -148,37 +145,6 @@ function initMTRDropdowns() {
       }
     });
   }
-  
-  window.addEventListener('languageChanged', () => {
-    const lineDefaultOption = lineSelect.querySelector('option[value=""]');
-    if (lineDefaultOption) {
-      lineDefaultOption.textContent = t('selectLine');
-    }
-    
-    const stationDefaultOption = stationSelect.querySelector('option[value=""]');
-    if (stationDefaultOption) {
-      stationDefaultOption.textContent = t('selectStation');
-    }
-    
-    // Re-populate line options with translated names
-    const regionKey = regionSelect.value;
-    if (regionKey && !lineSelect.disabled) {
-      const region = window.MTR_DATA[regionKey];
-      if (region) {
-        const selectedLine = lineSelect.value;
-        lineSelect.innerHTML = `<option value="">${t('selectLine')}</option>`;
-        Object.keys(region.lines).forEach(lineKey => {
-          const option = document.createElement('option');
-          option.value = lineKey;
-          option.textContent = getLineName(lineKey);
-          lineSelect.appendChild(option);
-        });
-        if (selectedLine) {
-          lineSelect.value = selectedLine;
-        }
-      }
-    }
-  });
 }
 
 function clearStationFilter() {
@@ -195,11 +161,10 @@ function updateActiveFilterDisplay(station, radius) {
   const filterDiv = document.getElementById('activeFilter');
   const filterStation = document.getElementById('filterStation');
   const filterRadius = document.getElementById('filterRadius');
-  const lang = getCurrentLang();
   
   if (station && filterDiv && filterStation && filterRadius) {
     filterStation.textContent = station.name;
-    const radiusLabel = lang === 'en' ? `${radius}km` : `${radius}公里`;
+    const radiusLabel = radius < 1 ? `${radius * 1000} 米` : `${radius} 公里`;
     filterRadius.textContent = radiusLabel;
     filterDiv.style.display = 'block';
   } else if (filterDiv) {

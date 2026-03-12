@@ -1,128 +1,50 @@
-// Internationalization (i18n) module
-// Schema version - increment when localStorage structure changes
-const I18N_SCHEMA_VERSION = 1;
-
+// Internationalization (i18n) module - Traditional Chinese only
 const I18N = {
-  defaultLang: 'zh-HK',
-  currentLang: 'zh-HK',
-  schemaVersion: I18N_SCHEMA_VERSION,
-  
   translations: {
-    'zh-HK': {
-      appTitle: '地圖應用程式',
-      appSubtitle: '按港鐵站搜尋',
-      selectMTRStation: '選擇港鐵站',
-      regionLabel: '地區',
-      lineLabel: '路綫',
-      stationLabel: '車站',
-      radiusLabel: '範圍',
-      searchPOI: '搜尋地點或地址',
-      searchPlaceholder: '輸入地點或地址 (例如：麥當勞，餐廳)',
-      searchBtn: '搜尋',
-      searchingNear: '搜尋附近：',
-      radius: '範圍內',
-      clearFilter: '清除篩選',
-      noResults: '找不到結果。',
-      pleaseEnterAddress: '請輸入地址。',
-      searching: '搜尋中...',
-      searchError: '搜尋時發生錯誤。',
-      allHongKong: '全香港',
-      hongKongIsland: '港島',
-      kowloon: '九龍',
-      newTerritories: '新界',
-      selectLine: '選擇路綫',
-      selectStation: '選擇車站',
-      meters: '米',
-      kilometers: '公里',
-      line_island: '港島綫',
-      line_tsuen_wan: '荃灣綫',
-      line_kwun_tong: '觀塘綫',
-      line_tuen_ma: '屯馬綫',
-      line_tung_chung: '東涌綫',
-      line_south_island: '南港島綫',
-      line_east_rail: '東鐵綫',
-      line_west_rail: '西鐵綫',
-      line_tseung_kwan_o: '將軍澳綫',
-      line_airport_express: '機場快綫',
-      line_tun_ma: '屯馬綫'
-    },
-    'en': {
-      appTitle: 'Map App',
-      appSubtitle: 'Search by MTR Station',
-      selectMTRStation: 'Select MTR Station',
-      regionLabel: 'Region',
-      lineLabel: 'Line',
-      stationLabel: 'Station',
-      radiusLabel: 'Radius',
-      searchPOI: 'Search POI or Address',
-      searchPlaceholder: 'Enter address or POI (e.g., McDonalds, restaurants)',
-      searchBtn: 'Search',
-      searchingNear: 'Searching near:',
-      radius: 'radius',
-      clearFilter: 'Clear Filter',
-      noResults: 'No results found.',
-      pleaseEnterAddress: 'Please enter an address.',
-      searching: 'Searching...',
-      searchError: 'Error while searching.',
-      allHongKong: 'All Hong Kong',
-      hongKongIsland: 'Hong Kong Island',
-      kowloon: 'Kowloon',
-      newTerritories: 'New Territories',
-      selectLine: 'Select Line',
-      selectStation: 'Select Station',
-      meters: 'm',
-      kilometers: 'km',
-      line_island: 'Island Line',
-      line_tsuen_wan: 'Tsuen Wan Line',
-      line_kwun_tong: 'Kwun Tong Line',
-      line_tuen_ma: 'Tuen Ma Line',
-      line_tung_chung: 'Tung Chung Line',
-      line_south_island: 'South Island Line',
-      line_east_rail: 'East Rail Line',
-      line_west_rail: 'West Rail Line',
-      line_tseung_kwan_o: 'Tseung Kwan O Line',
-      line_airport_express: 'Airport Express',
-      line_tun_ma: 'Tuen Ma Line'
-    }
-  },
-  
-  _checkAndMigrateStorage() {
-    try {
-      const storedVersion = localStorage.getItem('i18n_schema_version');
-      const currentVersion = this.schemaVersion;
-      
-      if (!storedVersion) {
-        localStorage.setItem('i18n_schema_version', currentVersion.toString());
-        return;
-      }
-      
-      const parsedVersion = parseInt(storedVersion, 10);
-      
-      if (isNaN(parsedVersion) || parsedVersion < currentVersion) {
-        console.log(`[I18N] Migrating storage from v${parsedVersion} to v${currentVersion}`);
-        localStorage.clear();
-        localStorage.setItem('i18n_schema_version', currentVersion.toString());
-        localStorage.setItem('preferredLang', this.defaultLang);
-        console.log(`[I18N] Storage cleared and reset to default language: ${this.defaultLang}`);
-      }
-    } catch (e) {
-      console.error('[I18N] Storage migration error:', e);
-      localStorage.setItem('i18n_schema_version', this.schemaVersion.toString());
-    }
+    appTitle: '地圖應用程式',
+    appSubtitle: '按港鐵站搜尋',
+    selectMTRStation: '選擇港鐵站',
+    regionLabel: '地區',
+    lineLabel: '路綫',
+    stationLabel: '車站',
+    radiusLabel: '範圍',
+    searchPOI: '搜尋地點或地址',
+    searchPlaceholder: '輸入地點或地址 (例如：麥當勞，餐廳)',
+    searchBtn: '搜尋',
+    searchingNear: '搜尋附近：',
+    radius: '範圍內',
+    clearFilter: '清除篩選',
+    noResults: '找不到結果。',
+    pleaseEnterAddress: '請輸入地址。',
+    searching: '搜尋中...',
+    searchError: '搜尋時發生錯誤。',
+    allHongKong: '全香港',
+    hongKongIsland: '港島',
+    kowloon: '九龍',
+    newTerritories: '新界',
+    selectLine: '選擇路綫',
+    selectStation: '選擇車站',
+    meters: '米',
+    kilometers: '公里',
+    line_island: '港島綫',
+    line_tsuen_wan: '荃灣綫',
+    line_kwun_tong: '觀塘綫',
+    line_tuen_ma: '屯馬綫',
+    line_tung_chung: '東涌綫',
+    line_south_island: '南港島綫',
+    line_east_rail: '東鐵綫',
+    line_west_rail: '西鐵綫',
+    line_tseung_kwan_o: '將軍澳綫',
+    line_airport_express: '機場快綫',
+    line_tun_ma: '屯馬綫'
   },
   
   init() {
-    this._checkAndMigrateStorage();
-    
-    const savedLang = localStorage.getItem('preferredLang');
-    if (savedLang && this.translations[savedLang]) {
-      this.currentLang = savedLang;
-    }
     this.translatePage();
   },
   
   t(key) {
-    return this.translations[this.currentLang][key] || this.translations['zh-HK'][key] || key;
+    return this.translations[key] || key;
   },
   
   translatePage() {
@@ -144,24 +66,10 @@ const I18N = {
     document.querySelectorAll('label[for]').forEach(el => {
       const forId = el.getAttribute('for');
       const key = forId + 'Label';
-      if (this.translations[this.currentLang][key]) {
+      if (this.translations[key]) {
         el.textContent = this.t(key);
       }
     });
-    
-    const langSelect = document.getElementById('langSelect');
-    if (langSelect) {
-      langSelect.value = this.currentLang;
-    }
-  },
-  
-  setLanguage(lang) {
-    if (this.translations[lang]) {
-      this.currentLang = lang;
-      localStorage.setItem('preferredLang', lang);
-      this.translatePage();
-      window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
-    }
   }
 };
 
