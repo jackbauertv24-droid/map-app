@@ -214,19 +214,19 @@ describe('MTR Station Data', () => {
   });
 
   test('Central station exists in lookup', () => {
-    expect(STATION_LOOKUP['central']).toBeDefined();
-    expect(STATION_LOOKUP['central'].name).toBe('Central');
-    expect(STATION_LOOKUP['central'].lat).toBe(22.2819);
+    expect(STATION_LOOKUP['中環']).toBeDefined();
+    expect(STATION_LOOKUP['中環'].name).toBe('中環');
+    expect(STATION_LOOKUP['中環'].lat).toBe(22.2819);
   });
 
   test('Mong Kok station exists in lookup', () => {
-    expect(STATION_LOOKUP['mong kok']).toBeDefined();
-    expect(STATION_LOOKUP['mong kok'].name).toBe('Mong Kok');
+    expect(STATION_LOOKUP['旺角']).toBeDefined();
+    expect(STATION_LOOKUP['旺角'].name).toBe('旺角');
   });
 
   test('Tsim Sha Tsui station exists in lookup', () => {
-    expect(STATION_LOOKUP['tsim sha tsui']).toBeDefined();
-    expect(STATION_LOOKUP['tsim sha tsui'].name).toBe('Tsim Sha Tsui');
+    expect(STATION_LOOKUP['尖沙咀']).toBeDefined();
+    expect(STATION_LOOKUP['尖沙咀'].name).toBe('尖沙咀');
   });
 
   test('All stations have required properties', () => {
