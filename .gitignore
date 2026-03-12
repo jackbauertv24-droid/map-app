@@ -8,3 +8,14 @@ node_modules/
 *~
 .idea/
 .vscode/
+
+# Playwright
+playwright-report/
+test-results/
+test-results.json
+
+# Test artifacts
+*.png
+*.jpg
+*.webm
+*.trace.zip

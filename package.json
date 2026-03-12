@@ -3,9 +3,14 @@
   "version": "1.0.0",
   "description": "Simple address search page",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:headed": "playwright test --headed"
   },
   "devDependencies": {
+    "@playwright/test": "^1.40.0",
     "jest": "^29.0.0",
     "jest-environment-jsdom": "^30.3.0",
     "jsdom": "^24.0.0"
