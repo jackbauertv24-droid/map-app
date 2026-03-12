@@ -1,14 +1,10 @@
 // MTR Dropdown Cascade Logic
 // Handles region -> line -> station selection flow
 
-/**
- * Get translated text from i18n
- */
 function t(key) {
   if (window.I18N && typeof window.I18N.t === 'function') {
     return window.I18N.t(key);
   }
-  // Fallback defaults
   const defaults = {
     selectLine: '選擇路綫',
     selectStation: '選擇車站'
@@ -16,21 +12,11 @@ function t(key) {
   return defaults[key] || key;
 }
 
-/**
- * Get current language
- */
 function getCurrentLang() {
   return window.I18N && window.I18N.currentLang ? window.I18N.currentLang : 'zh-HK';
 }
 
-/**
- * Initialize MTR dropdown cascade
- */
 function initMTRDropdowns() {
-  console.log('[dropdowns] initMTRDropdowns called');
-  console.log('[dropdowns] window.MTR_DATA exists:', !!window.MTR_DATA);
-  console.log('[dropdowns] window.I18N exists:', !!window.I18N);
-  
   if (!window.MTR_DATA) {
     console.error('MTR_DATA not loaded. Ensure mtr-stations.js is loaded before dropdowns.js');
     return;
@@ -46,11 +32,7 @@ function initMTRDropdowns() {
     return;
   }
   
-  // Region change → populate lines
   regionSelect.addEventListener('change', () => {
-    console.log('[dropdowns] Region changed to:', regionSelect.value);
-    console.log('[dropdowns] I18N state:', window.I18N ? window.I18N.currentLang : 'not initialized');
-    
     const regionKey = regionSelect.value;
     
     if (!regionKey) {
@@ -65,7 +47,6 @@ function initMTRDropdowns() {
     const region = window.MTR_DATA[regionKey];
     if (!region) return;
     
-    // Populate lines for selected region
     lineSelect.innerHTML = `<option value="">${t('selectLine')}</option>`;
     Object.keys(region.lines).forEach(lineKey => {
       const line = region.lines[lineKey];
@@ -79,7 +60,6 @@ function initMTRDropdowns() {
     stationSelect.innerHTML = `<option value="">${t('selectStation')}</option>`;
   });
   
-  // Line change → populate stations
   lineSelect.addEventListener('change', () => {
     const regionKey = regionSelect.value;
     const lineKey = lineSelect.value;
@@ -96,7 +76,6 @@ function initMTRDropdowns() {
     
     if (!line) return;
     
-    // Populate stations for selected line
     stationSelect.innerHTML = `<option value="">${t('selectStation')}</option>`;
     line.stations.forEach(station => {
       const option = document.createElement('option');
@@ -113,7 +92,6 @@ function initMTRDropdowns() {
     stationSelect.disabled = false;
   });
   
-  // Station change → set active filter
   stationSelect.addEventListener('change', () => {
     const stationValue = stationSelect.value;
     
@@ -130,7 +108,6 @@ function initMTRDropdowns() {
     
     updateActiveFilterDisplay(station, window.activeRadiusFilter);
     
-    // Auto-trigger search if there's a query
     const searchInput = document.getElementById('searchInput');
     if (searchInput && searchInput.value.trim()) {
       const searchBtn = document.getElementById('searchBtn');
@@ -138,14 +115,12 @@ function initMTRDropdowns() {
     }
   });
   
-  // Radius change → update active filter
   if (radiusSelect) {
     radiusSelect.addEventListener('change', () => {
       if (window.activeStationFilter) {
         window.activeRadiusFilter = parseFloat(radiusSelect.value);
         updateActiveFilterDisplay(window.activeStationFilter, window.activeRadiusFilter);
         
-        // Re-trigger search if there's a query
         const searchInput = document.getElementById('searchInput');
         if (searchInput && searchInput.value.trim()) {
           const searchBtn = document.getElementById('searchBtn');
@@ -155,16 +130,12 @@ function initMTRDropdowns() {
     });
   }
   
-  // Listen for language changes to update dropdown placeholders
   window.addEventListener('languageChanged', () => {
-    console.log('[dropdowns] Language changed event received');
-    // Update line select placeholder
     const lineDefaultOption = lineSelect.querySelector('option[value=""]');
     if (lineDefaultOption) {
       lineDefaultOption.textContent = t('selectLine');
     }
     
-    // Update station select placeholder
     const stationDefaultOption = stationSelect.querySelector('option[value=""]');
     if (stationDefaultOption) {
       stationDefaultOption.textContent = t('selectStation');
@@ -172,9 +143,6 @@ function initMTRDropdowns() {
   });
 }
 
-/**
- * Clear station filter (called from search.js)
- */
 function clearStationFilter() {
   window.activeStationFilter = null;
   window.activeRadiusFilter = 1;
@@ -185,9 +153,6 @@ function clearStationFilter() {
   }
 }
 
-/**
- * Update active filter display (called from search.js)
- */
 function updateActiveFilterDisplay(station, radius) {
   const filterDiv = document.getElementById('activeFilter');
   const filterStation = document.getElementById('filterStation');
@@ -204,13 +169,11 @@ function updateActiveFilterDisplay(station, radius) {
   }
 }
 
-// Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initMTRDropdowns);
 } else {
-  initMTRDropdowns();
+  setTimeout(initMTRDropdowns, 0);
 }
 
-// Export for global access
 window.clearStationFilter = clearStationFilter;
 window.updateActiveFilterDisplay = updateActiveFilterDisplay;

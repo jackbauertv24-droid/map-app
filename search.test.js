@@ -17,7 +17,7 @@ describe('Map App', () => {
   test('index.html contains search button', () => {
     const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
     expect(html).toContain('searchBtn');
-    expect(html).toContain('Search');
+    expect(html).toContain('搜尋');
   });
 
   test('index.html references external search.js', () => {

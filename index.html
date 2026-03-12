@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <title data-i18n="appTitle">地圖應用程式</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <style>
         body {font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Traditional Chinese', 'Microsoft JhengHei', Helvetica, Arial, sans-serif; margin:0; padding:0; background:#f7f7f7; color:#333; display:flex; flex-direction:column; min-height:100vh;}
         header {background:#2c3e50; color:#fff; padding:1rem; text-align:center; position: relative;}
@@ -54,7 +51,6 @@
         <div class="search-container">
             <h2 data-i18n="selectMTRStation">選擇港鐵站</h2>
             
-            <!-- Region Selector (Level 1) -->
             <div class="dropdown-row">
                 <div class="dropdown-group">
                     <label for="regionSelect" data-i18n="regionLabel">地區</label>
@@ -66,7 +62,6 @@
                     </select>
                 </div>
                 
-                <!-- Line Selector (Level 2) -->
                 <div class="dropdown-group">
                     <label for="lineSelect" data-i18n="lineLabel">路綫</label>
                     <select id="lineSelect" disabled>
@@ -74,7 +69,6 @@
                     </select>
                 </div>
                 
-                <!-- Station Selector (Level 3) -->
                 <div class="dropdown-group">
                     <label for="stationSelect" data-i18n="stationLabel">車站</label>
                     <select id="stationSelect" disabled>
@@ -82,7 +76,6 @@
                     </select>
                 </div>
                 
-                <!-- Radius Selector -->
                 <div class="dropdown-group" style="flex:0 0 120px;">
                     <label for="radiusSelect" data-i18n="radiusLabel">範圍</label>
                     <select id="radiusSelect">
@@ -95,7 +88,6 @@
                 </div>
             </div>
             
-            <!-- Search Input -->
             <h2 data-i18n="searchPOI">搜尋地點或地址</h2>
             <div class="search-row">
                 <input id="searchInput" type="text" data-i18n="searchPlaceholder" placeholder="輸入地點或地址 (例如：麥當勞，餐廳)"/>
@@ -103,14 +95,12 @@
             </div>
         </div>
         
-        <!-- Active Filter Display -->
         <div id="activeFilter" class="filter-badge" style="display:none;">
             <span><span data-i18n="searchingNear">搜尋附近：</span><strong id="filterStation"></strong> MTR</span>
             <span>(<span id="filterRadius"></span> <span data-i18n="radius">範圍內</span>)</span>
             <button id="clearFilter" title="" data-i18n="clearFilter">清除篩選</button>
         </div>
         
-        <!-- Results Area -->
         <div id="result"></div>
     </main>
     
@@ -119,19 +109,12 @@
     <script src="src/dropdowns.js"></script>
     <script src="src/search.js"></script>
     <script>
-        // Initialize i18n after DOM is ready
-        console.log('[inline] Script executing, readyState:', document.readyState);
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                console.log('[inline] DOMContentLoaded, initializing i18n');
-                I18N.init();
-            });
+            document.addEventListener('DOMContentLoaded', () => I18N.init());
         } else {
-            console.log('[inline] DOM already ready, initializing i18n');
             I18N.init();
         }
         
-        // Language selector change handler
         document.getElementById('langSelect').addEventListener('change', (e) => {
             I18N.setLanguage(e.target.value);
         });

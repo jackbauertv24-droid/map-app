@@ -244,10 +244,10 @@ async function searchOverpass(query, bounds = HK_BOUNDS, station = null) {
 async function searchNominatim(query) {
   // Use Traditional Chinese (zh-HK) as default, or English based on current language
   const lang = window.I18N && window.I18N.currentLang ? window.I18N.currentLang : 'zh-HK';
-  const acceptLang = lang === 'en' ? 'en' : 'zh-HK,zh-TW,zh';
+  const acceptLang = lang === 'en' ? 'en' : 'zh';
   
-  // Restrict search to Hong Kong only
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=hk&q=${encodeURIComponent(query)}&accept-language=${encodeURIComponent(acceptLang)}`;
+  // Restrict search to Hong Kong using viewbox (countrycodes parameter doesn't work reliably)
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&viewbox=113.8,22.15,114.45,22.55&bounded=1&q=${encodeURIComponent(query)}&accept-language=${encodeURIComponent(acceptLang)}`;
   
   const response = await fetch(url, {
     headers: { 'Accept-Language': acceptLang }
