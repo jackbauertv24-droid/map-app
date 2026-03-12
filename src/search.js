@@ -246,7 +246,8 @@ async function searchNominatim(query) {
   const lang = window.I18N && window.I18N.currentLang ? window.I18N.currentLang : 'zh-HK';
   const acceptLang = lang === 'en' ? 'en' : 'zh-HK,zh-TW,zh';
   
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(query)}&accept-language=${encodeURIComponent(acceptLang)}`;
+  // Restrict search to Hong Kong only
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=hk&q=${encodeURIComponent(query)}&accept-language=${encodeURIComponent(acceptLang)}`;
   
   const response = await fetch(url, {
     headers: { 'Accept-Language': acceptLang }

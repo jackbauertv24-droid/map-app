@@ -85,6 +85,9 @@ const I18N = {
         if (el.hasAttribute('placeholder')) {
           el.placeholder = text;
         }
+      } else if (el.tagName === 'OPTION') {
+        // For option elements, update text content
+        el.textContent = text;
       } else {
         el.textContent = text;
       }

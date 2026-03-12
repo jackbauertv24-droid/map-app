@@ -9,8 +9,8 @@ function t(key) {
     return window.I18N.t(key);
   }
   const defaults = {
-    selectLine: 'Select Line',
-    selectStation: 'Select Station'
+    selectLine: '選擇路綫',
+    selectStation: '選擇車站'
   };
   return defaults[key] || key;
 }
@@ -20,6 +20,17 @@ function t(key) {
  */
 function getCurrentLang() {
   return window.I18N ? window.I18N.currentLang : 'zh-HK';
+}
+
+/**
+ * Translate line name to current language
+ * For now, line names stay in English as they are proper nouns
+ * But we can add translations if needed
+ */
+function translateLineName(lineName) {
+  // Line names are proper nouns, keep as-is
+  // Could add translations here if desired
+  return lineName;
 }
 
 /**
@@ -63,7 +74,7 @@ function initMTRDropdowns() {
       const line = region.lines[lineKey];
       const option = document.createElement('option');
       option.value = lineKey;
-      option.textContent = line.name;
+      option.textContent = line.name; // Keep line names in English (proper nouns)
       lineSelect.appendChild(option);
     });
     lineSelect.disabled = false;
@@ -149,20 +160,16 @@ function initMTRDropdowns() {
   
   // Listen for language changes to update dropdown placeholders
   window.addEventListener('languageChanged', () => {
-    // Update line select placeholder if it's empty
-    if (lineSelect.disabled || !lineSelect.value) {
-      const defaultOption = lineSelect.querySelector('option[value=""]');
-      if (defaultOption) {
-        defaultOption.textContent = t('selectLine');
-      }
+    // Update line select placeholder
+    const lineDefaultOption = lineSelect.querySelector('option[value=""]');
+    if (lineDefaultOption) {
+      lineDefaultOption.textContent = t('selectLine');
     }
     
-    // Update station select placeholder if it's empty
-    if (stationSelect.disabled || !stationSelect.value) {
-      const defaultOption = stationSelect.querySelector('option[value=""]');
-      if (defaultOption) {
-        defaultOption.textContent = t('selectStation');
-      }
+    // Update station select placeholder
+    const stationDefaultOption = stationSelect.querySelector('option[value=""]');
+    if (stationDefaultOption) {
+      stationDefaultOption.textContent = t('selectStation');
     }
   });
 }
