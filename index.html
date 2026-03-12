@@ -2,28 +2,108 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Map‑App (placeholder)</title>
+    <title>Map-App - MTR Station Search</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin:0; padding:0; background:#f7f7f7; color:#333; display:flex; flex-direction:column; min-height:100vh;}
         header {background:#2c3e50; color:#fff; padding:1rem; text-align:center;}
-        main {flex:1; display:flex; align-items:center; justify-content:center; padding:2rem;}
-        a {color:#0066cc;}
+        main {flex:1; display:flex; flex-direction:column; align-items:center; padding:2rem; max-width:800px; margin:0 auto; width:100%; box-sizing:border-box;}
+        .search-container {background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); padding:1.5rem; width:100%; box-sizing:border-box; margin-bottom:1rem;}
+        .dropdown-row {display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap;}
+        .dropdown-group {flex:1; min-width:150px;}
+        .dropdown-group label {display:block; font-size:0.85rem; color:#666; margin-bottom:0.25rem; font-weight:500;}
+        select {width:100%; padding:0.5rem; font-size:0.9rem; border:1px solid #ddd; border-radius:4px; background:#fff; box-sizing:border-box;}
+        select:disabled {background:#f5f5f5; cursor:not-allowed;}
+        .search-row {display:flex; gap:0.5rem; align-items:center;}
+        #searchInput {flex:1; padding:0.75rem; font-size:1rem; border:1px solid #ddd; border-radius:4px;}
+        #searchBtn {padding:0.75rem 1.5rem; font-size:1rem; background:#3498db; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:500;}
+        #searchBtn:hover {background:#2980b9;}
+        #result {margin-top:1rem; width:100%;}
+        .filter-badge {background:#27ae60; color:#fff; padding:0.5rem 1rem; border-radius:4px; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; font-size:0.9rem;}
+        .filter-badge button {background:transparent; border:none; color:#fff; cursor:pointer; font-size:1rem; padding:0 0.25rem;}
+        .filter-badge button:hover {opacity:0.8;}
+        h2 {margin:0 0 1rem 0; color:#2c3e50; font-size:1.25rem;}
+        
+        @media (max-width: 600px) {
+            .dropdown-row {flex-direction:column;}
+            .dropdown-group {min-width:100%;}
+            .search-row {flex-direction:column;}
+            #searchInput {width:100%;}
+            #searchBtn {width:100%;}
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>Map‑App</h1>
-        <p>🚧  Placeholder – real map will be added soon 🚧</p>
+        <h1>Map-App</h1>
+        <p>Search by MTR Station</p>
     </header>
     <main>
-        <div style="text-align:center; max-width:600px; margin:auto;">
-            <h2>Find a location</h2>
-            <input id="searchInput" type="text" placeholder="Enter address or POI" style="width:70%; padding:0.5rem; font-size:1rem;"/>
-            <button id="searchBtn" style="padding:0.5rem 1rem; font-size:1rem; margin-left:0.5rem;">Search</button>
-            <div id="result" style="margin-top:1rem; color:#2c3e50;"></div>
+        <div class="search-container">
+            <h2>Select MTR Station</h2>
+            
+            <!-- Region Selector (Level 1) -->
+            <div class="dropdown-row">
+                <div class="dropdown-group">
+                    <label for="regionSelect">Region</label>
+                    <select id="regionSelect">
+                        <option value="">All Hong Kong</option>
+                        <option value="hong_kong_island">Hong Kong Island</option>
+                        <option value="kowloon">Kowloon</option>
+                        <option value="new_territories">New Territories</option>
+                    </select>
+                </div>
+                
+                <!-- Line Selector (Level 2) -->
+                <div class="dropdown-group">
+                    <label for="lineSelect">MTR Line</label>
+                    <select id="lineSelect" disabled>
+                        <option value="">Select Line</option>
+                    </select>
+                </div>
+                
+                <!-- Station Selector (Level 3) -->
+                <div class="dropdown-group">
+                    <label for="stationSelect">Station</label>
+                    <select id="stationSelect" disabled>
+                        <option value="">Select Station</option>
+                    </select>
+                </div>
+                
+                <!-- Radius Selector -->
+                <div class="dropdown-group" style="flex:0 0 120px;">
+                    <label for="radiusSelect">Radius</label>
+                    <select id="radiusSelect">
+                        <option value="0.5">500m</option>
+                        <option value="1" selected>1km</option>
+                        <option value="1.5">1.5km</option>
+                        <option value="2">2km</option>
+                        <option value="3">3km</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Search Input -->
+            <h2>Search POI or Address</h2>
+            <div class="search-row">
+                <input id="searchInput" type="text" placeholder="Enter address or POI (e.g., McDonalds, restaurants)"/>
+                <button id="searchBtn">Search</button>
+            </div>
         </div>
-        <script src="src/search.js"></script>
+        
+        <!-- Active Filter Display -->
+        <div id="activeFilter" class="filter-badge" style="display:none;">
+            <span>Searching near: <strong id="filterStation"></strong> MTR</span>
+            <span>(<span id="filterRadius"></span> radius)</span>
+            <button id="clearFilter" title="Clear filter">✕</button>
+        </div>
+        
+        <!-- Results Area -->
+        <div id="result"></div>
     </main>
+    
+    <script src="src/mtr-stations.js"></script>
+    <script src="src/dropdowns.js"></script>
+    <script src="src/search.js"></script>
 </body>
 </html>

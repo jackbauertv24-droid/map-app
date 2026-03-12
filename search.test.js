@@ -148,3 +148,98 @@ describe('Search Functionality - renderResults', () => {
     expect(escapeHtml('Test & special <chars>')).toBe('Test &amp; special &lt;chars&gt;');
   });
 });
+
+describe('MTR Station Bounds Calculation', () => {
+  const { calculateStationBounds } = require('./src/search');
+
+  test('calculates bounds for Central station with 1km radius', () => {
+    const bounds = calculateStationBounds(22.2819, 114.1578, 1);
+    
+    expect(bounds.latMin).toBeCloseTo(22.2729, 2);
+    expect(bounds.latMax).toBeCloseTo(22.2909, 2);
+    expect(bounds.lonMin).toBeCloseTo(114.1488, 2);
+    expect(bounds.lonMax).toBeCloseTo(114.1668, 2);
+  });
+
+  test('calculates bounds with different radius values', () => {
+    const bounds500m = calculateStationBounds(22.2819, 114.1578, 0.5);
+    const bounds2km = calculateStationBounds(22.2819, 114.1578, 2);
+    
+    expect(bounds500m.latMax - bounds500m.latMin).toBeLessThan(bounds2km.latMax - bounds2km.latMin);
+  });
+
+  test('calculates bounds for Kowloon station', () => {
+    const bounds = calculateStationBounds(22.2974, 114.1719, 1.5);
+    
+    expect(bounds.latMin).toBeLessThan(22.2974);
+    expect(bounds.latMax).toBeGreaterThan(22.2974);
+    expect(bounds.lonMin).toBeLessThan(114.1719);
+    expect(bounds.lonMax).toBeGreaterThan(114.1719);
+  });
+});
+
+describe('Distance Calculation', () => {
+  const { calculateDistance, formatDistance } = require('./src/search');
+
+  test('calculates distance between two points', () => {
+    const distance = calculateDistance(22.2819, 114.1578, 22.2974, 114.1719);
+    
+    expect(distance).toBeGreaterThan(0);
+    expect(distance).toBeLessThan(5);
+  });
+
+  test('formats distance correctly', () => {
+    expect(formatDistance(0.5)).toBe('500m');
+    expect(formatDistance(0.35)).toBe('350m');
+    expect(formatDistance(1.5)).toBe('1.5km');
+    expect(formatDistance(2.3)).toBe('2.3km');
+  });
+});
+
+describe('MTR Station Data', () => {
+  const { MTR_DATA, STATION_LOOKUP } = require('./src/mtr-stations');
+
+  test('MTR_DATA has three regions', () => {
+    expect(Object.keys(MTR_DATA)).toHaveLength(3);
+    expect(MTR_DATA).toHaveProperty('hong_kong_island');
+    expect(MTR_DATA).toHaveProperty('kowloon');
+    expect(MTR_DATA).toHaveProperty('new_territories');
+  });
+
+  test('Hong Kong Island has Island Line', () => {
+    expect(MTR_DATA.hong_kong_island.lines).toHaveProperty('island');
+    expect(MTR_DATA.hong_kong_island.lines.island.stations.length).toBeGreaterThan(0);
+  });
+
+  test('Central station exists in lookup', () => {
+    expect(STATION_LOOKUP['central']).toBeDefined();
+    expect(STATION_LOOKUP['central'].name).toBe('Central');
+    expect(STATION_LOOKUP['central'].lat).toBe(22.2819);
+  });
+
+  test('Mong Kok station exists in lookup', () => {
+    expect(STATION_LOOKUP['mong kok']).toBeDefined();
+    expect(STATION_LOOKUP['mong kok'].name).toBe('Mong Kok');
+  });
+
+  test('Tsim Sha Tsui station exists in lookup', () => {
+    expect(STATION_LOOKUP['tsim sha tsui']).toBeDefined();
+    expect(STATION_LOOKUP['tsim sha tsui'].name).toBe('Tsim Sha Tsui');
+  });
+
+  test('All stations have required properties', () => {
+    Object.keys(MTR_DATA).forEach(regionKey => {
+      const region = MTR_DATA[regionKey];
+      Object.keys(region.lines).forEach(lineKey => {
+        const line = region.lines[lineKey];
+        line.stations.forEach(station => {
+          expect(station).toHaveProperty('name');
+          expect(station).toHaveProperty('lat');
+          expect(station).toHaveProperty('lon');
+          expect(typeof station.lat).toBe('number');
+          expect(typeof station.lon).toBe('number');
+        });
+      });
+    });
+  });
+});

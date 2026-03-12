@@ -12,6 +12,9 @@ const HK_BOUNDS = {
   lonMax: 114.45
 };
 
+// Default search radius in km
+const DEFAULT_RADIUS_KM = 1;
+
 // Common POI keywords that should use Overpass API
 const POI_KEYWORDS = [
   'mcdonald', 'mcdonalds', 'burger king', 'kfc', 'starbucks',
@@ -19,6 +22,66 @@ const POI_KEYWORDS = [
   'park', 'museum', 'shopping', 'mall', 'station',
   'bank', 'atm', 'pharmacy', 'supermarket', 'gym'
 ];
+
+// Current active station filter
+let activeStationFilter = null;
+let activeRadiusFilter = DEFAULT_RADIUS_KM;
+
+/**
+ * Calculate bounding box from station center with given radius
+ * @param {number} lat - Station latitude
+ * @param {number} lon - Station longitude
+ * @param {number} radiusKm - Search radius in kilometers
+ * @returns {object} - Bounding box coordinates
+ */
+function calculateStationBounds(lat, lon, radiusKm) {
+  const latDelta = radiusKm / 111.0;
+  const lonDelta = radiusKm / (111.0 * Math.cos(lat * Math.PI / 180));
+  
+  return {
+    latMin: lat - latDelta,
+    latMax: lat + latDelta,
+    lonMin: lon - lonDelta,
+    lonMax: lon + lonDelta
+  };
+}
+
+/**
+ * Detect MTR station from search query
+ * @param {string} query - User search query
+ * @returns {object|null} - Station object or null
+ */
+function detectStationFromQuery(query) {
+  const lowerQuery = query.toLowerCase();
+  
+  // Check for station patterns: "near [station]", "[station] mtr", etc.
+  const patterns = [
+    /near\s+(.+)/i,
+    /(.+)\s+mtr/i,
+    /(.+)\s+station/i
+  ];
+  
+  for (const pattern of patterns) {
+    const match = query.match(pattern);
+    if (match) {
+      const potentialStation = match[1].trim().toLowerCase();
+      
+      // Try exact match first
+      if (STATION_LOOKUP && STATION_LOOKUP[potentialStation]) {
+        return STATION_LOOKUP[potentialStation];
+      }
+      
+      // Try partial match
+      for (const [key, station] of Object.entries(STATION_LOOKUP || {})) {
+        if (key.includes(potentialStation) || potentialStation.includes(key)) {
+          return station;
+        }
+      }
+    }
+  }
+  
+  return null;
+}
 
 /**
  * Detect if query is POI-focused or address-focused
@@ -93,24 +156,46 @@ function buildOverpassQuery(query, bounds = HK_BOUNDS) {
 }
 
 /**
+ * Calculate distance between two points in km
+ * @param {number} lat1 - Point 1 latitude
+ * @param {number} lon1 - Point 1 longitude
+ * @param {number} lat2 - Point 2 latitude
+ * @param {number} lon2 - Point 2 longitude
+ * @returns {number} - Distance in kilometers
+ */
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+/**
  * Search using Overpass API
  * @param {string} query - User search query
+ * @param {object} bounds - Geographic bounds
+ * @param {object} station - Station object for distance calculation
  * @returns {Promise<Array>} - Array of search results
  */
-async function searchOverpass(query) {
-  const overpassQuery = buildOverpassQuery(query);
+async function searchOverpass(query, bounds = HK_BOUNDS, station = null) {
+  const overpassQuery = buildOverpassQuery(query, bounds);
   const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`;
   
   const response = await fetch(url);
   const data = await response.json();
   
   // Transform Overpass results to standard format
-  return data.elements.map((element, idx) => {
+  let results = data.elements.map((element, idx) => {
     const name = element.tags?.name || element.tags?.['name:en'] || 'Unknown';
     const lat = element.lat || element.center?.lat;
     const lon = element.lon || element.center?.lon;
     
-    return {
+    const result = {
       place_id: element.id,
       display_name: name,
       lat: lat.toString(),
@@ -118,7 +203,21 @@ async function searchOverpass(query) {
       type: element.tags?.amenity || element.type,
       tags: element.tags || {}
     };
+    
+    // Calculate distance from station if provided
+    if (station && lat && lon) {
+      result.distance = calculateDistance(station.lat, station.lon, lat, lon);
+    }
+    
+    return result;
   });
+  
+  // Sort by distance if station is provided
+  if (station) {
+    results.sort((a, b) => (a.distance || 999) - (b.distance || 999));
+  }
+  
+  return results;
 }
 
 /**
@@ -138,13 +237,22 @@ async function searchNominatim(query) {
 /**
  * Main search function - routes to appropriate API
  * @param {string} query - User search query
+ * @param {object} station - Optional station object for proximity search
+ * @param {number} radiusKm - Search radius in kilometers
  * @returns {Promise<Array>} - Array of search results
  */
-async function performSearch(query) {
+async function performSearch(query, station = null, radiusKm = DEFAULT_RADIUS_KM) {
+  let bounds = HK_BOUNDS;
+  
+  // Use station-based bounds if station is provided
+  if (station) {
+    bounds = calculateStationBounds(station.lat, station.lon, radiusKm);
+  }
+  
   const searchType = detectSearchType(query);
   
   if (searchType === API_PROVIDERS.OVERPASS) {
-    return searchOverpass(query);
+    return searchOverpass(query, bounds, station);
   } else {
     return searchNominatim(query);
   }
@@ -162,17 +270,42 @@ function escapeHtml(text) {
 }
 
 /**
+ * Format distance for display
+ * @param {number} distanceKm - Distance in kilometers
+ * @returns {string} - Formatted distance
+ */
+function formatDistance(distanceKm) {
+  if (distanceKm < 1) {
+    return `${Math.round(distanceKm * 1000)}m`;
+  }
+  return `${distanceKm.toFixed(1)}km`;
+}
+
+/**
  * Render search results to the DOM
  * @param {Array} results - Search results
  * @param {HTMLElement} resultDiv - DOM element to render into
+ * @param {object} station - Optional station object
+ * @param {number} radius - Search radius used
  */
-function renderResults(results, resultDiv) {
+function renderResults(results, resultDiv, station = null, radius = null) {
   if (!results || results.length === 0) {
     resultDiv.textContent = 'No results found.';
     return;
   }
   
   let html = '';
+  
+  // Show active filter info
+  if (station) {
+    html += `<div style="background:#e8f4fd; border:1px solid #3498db; border-radius:4px; padding:0.75rem; margin-bottom:1rem; text-align:left;">
+      <div style="color:#2c3e50; font-weight:bold;">
+        <span style="color:#3498db;">🚇</span> Searching near: <strong>${escapeHtml(station.name)} MTR</strong>
+        <span style="color:#666; font-weight:normal;">(${radius}km radius)</span>
+      </div>
+    </div>`;
+  }
+  
   results.forEach((place, idx) => {
     const displayName = escapeHtml(place.display_name);
     const lat = place.lat;
@@ -182,8 +315,14 @@ function renderResults(results, resultDiv) {
     html += `<div style="background:#fff; border:1px solid #ddd; border-radius:4px; padding:0.75rem; margin-bottom:0.75rem; text-align:left;">
       <div style="font-weight:bold; color:#2c3e50; margin-bottom:0.25rem;">
         <span style="background:#3498db; color:#fff; padding:0.15rem 0.5rem; border-radius:3px; margin-right:0.5rem; font-size:0.85rem;">#${badgeNum}</span>
-        ${displayName}
-      </div>
+        ${displayName}`;
+    
+    // Add distance badge if available
+    if (place.distance !== undefined && station) {
+      html += `<span style="background:#27ae60; color:#fff; padding:0.15rem 0.5rem; border-radius:3px; margin-left:0.5rem; font-size:0.75rem; font-weight:normal;">${formatDistance(place.distance)}</span>`;
+    }
+    
+    html += `</div>
       <div style="color:#666; font-size:0.9rem;">
         <span>Latitude: ${lat}</span> | <span>Longitude: ${lon}</span>
       </div>
@@ -191,6 +330,50 @@ function renderResults(results, resultDiv) {
   });
   
   resultDiv.innerHTML = html;
+}
+
+/**
+ * Update active filter display
+ * @param {object} station - Station object
+ * @param {number} radius - Search radius
+ */
+function updateActiveFilterDisplay(station, radius) {
+  const filterDiv = document.getElementById('activeFilter');
+  const filterStation = document.getElementById('filterStation');
+  const filterRadius = document.getElementById('filterRadius');
+  
+  if (station && filterDiv) {
+    filterStation.textContent = station.name;
+    filterRadius.textContent = `${radius}km`;
+    filterDiv.style.display = 'block';
+  } else if (filterDiv) {
+    filterDiv.style.display = 'none';
+  }
+}
+
+/**
+ * Clear station filter
+ */
+function clearStationFilter() {
+  activeStationFilter = null;
+  activeRadiusFilter = DEFAULT_RADIUS_KM;
+  
+  // Reset dropdowns
+  const regionSelect = document.getElementById('regionSelect');
+  const lineSelect = document.getElementById('lineSelect');
+  const stationSelect = document.getElementById('stationSelect');
+  
+  if (regionSelect) regionSelect.value = '';
+  if (lineSelect) {
+    lineSelect.value = '';
+    lineSelect.disabled = true;
+  }
+  if (stationSelect) {
+    stationSelect.value = '';
+    stationSelect.disabled = true;
+  }
+  
+  updateActiveFilterDisplay(null, null);
 }
 
 /**
@@ -217,9 +400,16 @@ function initSearch() {
     
     resultDiv.textContent = 'Searching...';
     
-    performSearch(query)
+    // Check if query mentions a station
+    let station = activeStationFilter;
+    const detectedStation = detectStationFromQuery(query);
+    if (detectedStation) {
+      station = detectedStation;
+    }
+    
+    performSearch(query, station, activeRadiusFilter)
       .then(results => {
-        renderResults(results, resultDiv);
+        renderResults(results, resultDiv, station, activeRadiusFilter);
       })
       .catch(err => {
         console.error('Search error:', err);
@@ -235,6 +425,12 @@ function initSearch() {
       doSearch();
     }
   });
+  
+  // Clear filter button
+  const clearFilterBtn = document.getElementById('clearFilter');
+  if (clearFilterBtn) {
+    clearFilterBtn.addEventListener('click', clearStationFilter);
+  }
 }
 
 // Initialize when DOM is ready
@@ -254,8 +450,13 @@ if (typeof module !== 'undefined' && module.exports) {
     performSearch,
     escapeHtml,
     renderResults,
+    calculateStationBounds,
+    detectStationFromQuery,
+    calculateDistance,
+    formatDistance,
     API_PROVIDERS,
     POI_KEYWORDS,
-    HK_BOUNDS
+    HK_BOUNDS,
+    DEFAULT_RADIUS_KM
   };
 }
