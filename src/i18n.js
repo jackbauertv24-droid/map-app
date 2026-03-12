@@ -43,7 +43,8 @@ const I18N = {
       line_east_rail: '東鐵綫',
       line_west_rail: '西鐵綫',
       line_tseung_kwan_o: '將軍澳綫',
-      line_airport_express: '機場快綫'
+      line_airport_express: '機場快綫',
+      line_tun_ma: '屯馬綫'
     },
     'en': {
       appTitle: 'Map App',
@@ -80,7 +81,8 @@ const I18N = {
       line_east_rail: 'East Rail Line',
       line_west_rail: 'West Rail Line',
       line_tseung_kwan_o: 'Tseung Kwan O Line',
-      line_airport_express: 'Airport Express'
+      line_airport_express: 'Airport Express',
+      line_tun_ma: 'Tuen Ma Line'
     }
   },
   
