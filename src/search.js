@@ -15,12 +15,15 @@ const HK_BOUNDS = {
 // Default search radius in km
 const DEFAULT_RADIUS_KM = 1;
 
-// Common POI keywords that should use Overpass API
+// Common POI keywords that should use Overpass API (English and Traditional Chinese)
 const POI_KEYWORDS = [
   'mcdonald', 'mcdonalds', 'burger king', 'kfc', 'starbucks',
   'restaurant', 'cafe', 'hotel', 'hospital', 'school',
   'park', 'museum', 'shopping', 'mall', 'station',
-  'bank', 'atm', 'pharmacy', 'supermarket', 'gym'
+  'bank', 'atm', 'pharmacy', 'supermarket', 'gym',
+  '麥當勞', '餐廳', '咖啡', '酒店', '醫院', '學校',
+  '公園', '博物館', '購物', '商場', '車站',
+  '銀行', '診所', '藥房', '超市', '健身'
 ];
 
 // Current active station filter (shared via window object)
@@ -131,21 +134,24 @@ function buildOverpassQuery(query, bounds = HK_BOUNDS) {
   let poiType = 'fast_food';
   let namePattern = query;
   
-  // Map common POI terms to OSM tags
-  if (lowerQuery.includes('mcdonald')) {
+  // Map common POI terms to OSM tags (English and Traditional Chinese)
+  if (lowerQuery.includes('mcdonald') || lowerQuery.includes('麥當勞')) {
     poiType = 'fast_food';
     namePattern = 'McDonald';
   } else if (lowerQuery.includes('burger')) {
     poiType = 'fast_food';
     namePattern = 'Burger';
-  } else if (lowerQuery.includes('restaurant')) {
+  } else if (lowerQuery.includes('restaurant') || lowerQuery.includes('餐廳')) {
     poiType = 'restaurant';
     namePattern = '';
-  } else if (lowerQuery.includes('cafe') || lowerQuery.includes('coffee')) {
+  } else if (lowerQuery.includes('cafe') || lowerQuery.includes('coffee') || lowerQuery.includes('咖啡')) {
     poiType = 'cafe';
     namePattern = '';
-  } else if (lowerQuery.includes('hotel')) {
+  } else if (lowerQuery.includes('hotel') || lowerQuery.includes('酒店')) {
     poiType = 'hotel';
+    namePattern = '';
+  } else if (lowerQuery.includes('fast_food') || lowerQuery.includes('快餐')) {
+    poiType = 'fast_food';
     namePattern = '';
   }
   
@@ -240,15 +246,34 @@ async function searchOverpass(query, bounds = HK_BOUNDS, station = null, radiusK
 /**
  * Search using Nominatim API
  * @param {string} query - User search query
+ * @param {object} station - Optional station object for distance calculation
+ * @param {number} radiusKm - Optional search radius in kilometers
  * @returns {Promise<Array>} - Array of search results
  */
-async function searchNominatim(query) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&viewbox=113.8,22.15,114.45,22.55&bounded=1&q=${encodeURIComponent(query)}&accept-language=zh`;
+async function searchNominatim(query, station = null, radiusKm = DEFAULT_RADIUS_KM) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=20&viewbox=113.8,22.15,114.45,22.55&bounded=1&q=${encodeURIComponent(query)}&accept-language=zh`;
   
   const response = await fetch(url, {
     headers: { 'Accept-Language': 'zh' }
   });
-  return response.json();
+  let results = await response.json();
+  
+  // Calculate distances and filter by radius if station is provided
+  if (station && results && results.length > 0) {
+    results = results.map(result => {
+      const lat = parseFloat(result.lat);
+      const lon = parseFloat(result.lon);
+      const distance = calculateDistance(station.lat, station.lon, lat, lon);
+      return { ...result, distance };
+    });
+    
+    // Filter by radius and sort by distance
+    results = results
+      .filter(r => r.distance <= radiusKm)
+      .sort((a, b) => a.distance - b.distance);
+  }
+  
+  return results;
 }
 
 /**
@@ -271,7 +296,7 @@ async function performSearch(query, station = null, radiusKm = DEFAULT_RADIUS_KM
   if (searchType === API_PROVIDERS.OVERPASS) {
     return searchOverpass(query, bounds, station, radiusKm);
   } else {
-    return searchNominatim(query);
+    return searchNominatim(query, station, radiusKm);
   }
 }
 
