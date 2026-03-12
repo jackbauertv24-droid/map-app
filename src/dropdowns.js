@@ -5,9 +5,7 @@
  * Initialize MTR dropdown cascade
  */
 function initMTRDropdowns() {
-  const MTR_DATA = window.MTR_DATA;
-  
-  if (!MTR_DATA) {
+  if (!window.MTR_DATA) {
     console.error('MTR_DATA not loaded. Ensure mtr-stations.js is loaded before dropdowns.js');
     return;
   }
@@ -35,7 +33,7 @@ function initMTRDropdowns() {
       return;
     }
     
-    const region = MTR_DATA[regionKey];
+    const region = window.MTR_DATA[regionKey];
     if (!region) return;
     
     // Populate lines for selected region
@@ -64,7 +62,7 @@ function initMTRDropdowns() {
       return;
     }
     
-    const region = MTR_DATA[regionKey];
+    const region = window.MTR_DATA[regionKey];
     const line = region.lines[lineKey];
     
     if (!line) return;
