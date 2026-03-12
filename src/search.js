@@ -334,7 +334,7 @@ async function searchOverpass(query, bounds = HK_BOUNDS, station = null, radiusK
  * @param {number} radiusKm - Search radius in kilometers
  * @returns {Promise<Array>} - Array of search results
  */
-async function performSearch(query, station = null, radiusKm = DEFAULT_RADIUS_KM) {
+async function performSearch(query, station = null, radiusKm = DEFAULT_RADIUS_KM, useGoogleMaps = false) {
   let bounds = HK_BOUNDS;
   
   // Use station-based bounds if station is provided
@@ -342,6 +342,31 @@ async function performSearch(query, station = null, radiusKm = DEFAULT_RADIUS_KM
     bounds = calculateStationBounds(station.lat, station.lon, radiusKm);
   }
   
+  // Use Google Maps if enabled
+  if (useGoogleMaps && station) {
+    const gmapsResults = await GoogleMapsSearch.search(query, station.lat, station.lon, radiusKm * 1000);
+    
+    // Calculate distances for Google Maps results
+    if (gmapsResults && gmapsResults.length > 0) {
+      gmapsResults.forEach(result => {
+        const lat = parseFloat(result.lat);
+        const lon = parseFloat(result.lon);
+        if (lat && lon) {
+          result.distance = calculateDistance(station.lat, station.lon, lat, lon);
+        }
+      });
+      
+      // Filter by radius and sort by distance
+      const filtered = gmapsResults.filter(r => r.distance !== undefined && r.distance <= radiusKm);
+      filtered.sort((a, b) => (a.distance || 999) - (b.distance || 999));
+      
+      return filtered;
+    }
+    
+    return gmapsResults || [];
+  }
+  
+  // Default to Overpass API
   return searchOverpass(query, bounds, station, radiusKm);
 }
 
@@ -535,16 +560,32 @@ function initSearch() {
   initAmenitySuggestions();
   
   // Search function
-  function doSearch() {
+  async function doSearch() {
     const query = searchInput.value.trim();
     const i18n = window.I18N;
+    const progressDiv = document.getElementById('searchProgress');
     
     if (!query) {
       resultDiv.textContent = i18n ? i18n.t('pleaseEnterAddress') : '請輸入地址。';
       return;
     }
     
-    resultDiv.textContent = i18n ? i18n.t('searching') : '搜尋中...';
+    // Check if Google Maps is enabled
+    const useGoogleMapsCheckbox = document.getElementById('useGoogleMaps');
+    const useGoogleMaps = useGoogleMapsCheckbox && useGoogleMapsCheckbox.checked;
+    
+    // Show progress indicator for Google Maps searches
+    if (useGoogleMaps) {
+      resultDiv.textContent = '';
+      if (progressDiv) {
+        progressDiv.style.display = 'block';
+      }
+    } else {
+      resultDiv.textContent = i18n ? i18n.t('searching') : '搜尋中...';
+      if (progressDiv) {
+        progressDiv.style.display = 'none';
+      }
+    }
     
     // Check if query mentions a station
     let station = getActiveStationFilter();
@@ -555,14 +596,25 @@ function initSearch() {
     
     const radius = getActiveRadiusFilter();
     
-    performSearch(query, station, radius)
-      .then(results => {
-        renderResults(results, resultDiv, station, radius);
-      })
-      .catch(err => {
-        console.error('Search error:', err);
-        resultDiv.textContent = i18n ? i18n.t('searchError') : '搜尋時發生錯誤。';
-      });
+    try {
+      const results = await performSearch(query, station, radius, useGoogleMaps);
+      
+      // Hide progress indicator
+      if (progressDiv) {
+        progressDiv.style.display = 'none';
+      }
+      
+      renderResults(results, resultDiv, station, radius);
+    } catch (err) {
+      console.error('Search error:', err);
+      
+      // Hide progress indicator
+      if (progressDiv) {
+        progressDiv.style.display = 'none';
+      }
+      
+      resultDiv.textContent = i18n ? i18n.t('searchError') : '搜尋時發生錯誤。';
+    }
   }
   
   // Event listeners
