@@ -15,6 +15,8 @@ const I18N = {
     radius: '範圍內',
     clearFilter: '清除篩選',
     noResults: '找不到結果。',
+    visualize: '地圖顯示',
+    searchResults: '搜尋結果',
     pleaseEnterAddress: '請輸入地址。',
     searching: '搜尋中...',
     searchError: '搜尋時發生錯誤。',

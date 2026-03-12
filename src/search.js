@@ -401,6 +401,10 @@ function renderResults(results, resultDiv, station = null, radius = null) {
     </div>`;
   }
   
+  // Add visualize button
+  const visualizeBtnText = i18n ? i18n.t('visualize') : '地圖顯示';
+  html += `<button id="visualizeBtn" style="background:#27ae60; color:#fff; border:none; border-radius:4px; padding:0.75rem 1.5rem; font-size:1rem; cursor:pointer; margin-bottom:1rem; font-weight:500;">${visualizeBtnText} (${results.length})</button>`;
+  
   results.forEach((place, idx) => {
     const displayName = escapeHtml(place.display_name);
     const lat = place.lat;
@@ -425,6 +429,14 @@ function renderResults(results, resultDiv, station = null, radius = null) {
   });
   
   resultDiv.innerHTML = html;
+  
+  // Add click handler for visualize button
+  const visualizeBtn = document.getElementById('visualizeBtn');
+  if (visualizeBtn && window.MapVisualizer) {
+    visualizeBtn.addEventListener('click', function() {
+      window.MapVisualizer.openMap(results);
+    });
+  }
 }
 
 /**
