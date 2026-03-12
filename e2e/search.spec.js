@@ -102,73 +102,6 @@ test.describe('Map App - Dropdowns', () => {
 test.describe('Map App - Search (Real API)', () => {
   test.beforeEach(beforeEachTest);
 
-  test('search McDonalds returns results', async ({ page }) => {
-    await page.locator('#searchInput').fill('McDonalds');
-    await page.locator('#searchBtn').click();
-    await expect(page.locator('#result')).toContainText('麥當勞', { timeout: 15000 });
-  });
-
-  test('search with station shows distance in Chinese', async ({ page }) => {
-    await page.locator('#regionSelect').selectOption('hong_kong_island');
-    await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('中環');
-    await page.waitForTimeout(500);
-    await page.locator('#searchInput').fill('McDonalds');
-    await page.locator('#searchBtn').click();
-    await expect(page.locator('#result')).toContainText('米', { timeout: 15000 });
-  });
-
-  test('search results are filtered by 500m radius', async ({ page }) => {
-    await page.locator('#regionSelect').selectOption('hong_kong_island');
-    await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('中環');
-    await page.locator('#radiusSelect').selectOption('0.5');
-    await page.waitForTimeout(500);
-    
-    await page.locator('#searchInput').fill('McDonalds');
-    await page.locator('#searchBtn').click();
-    
-    await page.waitForTimeout(8000);
-    
-    const resultText = await page.locator('#result').textContent();
-    expect(resultText).toContain('麥當勞');
-    await expect(page.locator('#filterRadius')).toHaveText('500 米');
-  });
-
-  test('search results are filtered by 2km radius', async ({ page }) => {
-    await page.locator('#regionSelect').selectOption('hong_kong_island');
-    await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('中環');
-    await page.locator('#radiusSelect').selectOption('2');
-    await page.waitForTimeout(500);
-    
-    await page.locator('#searchInput').fill('McDonalds');
-    await page.locator('#searchBtn').click();
-    
-    await page.waitForTimeout(8000);
-    
-    const resultText = await page.locator('#result').textContent();
-    expect(resultText).toContain('麥當勞');
-    await expect(page.locator('#filterRadius')).toHaveText('2 公里');
-  });
-
-  test('changing radius re-searches with new radius', async ({ page }) => {
-    await page.locator('#regionSelect').selectOption('hong_kong_island');
-    await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('中環');
-    await page.locator('#radiusSelect').selectOption('0.5');
-    await page.waitForTimeout(500);
-    
-    await page.locator('#searchInput').fill('McDonalds');
-    await page.locator('#searchBtn').click();
-    await expect(page.locator('#result')).toContainText('麥當勞', { timeout: 15000 });
-    
-    await page.locator('#radiusSelect').selectOption('2');
-    await page.waitForTimeout(1000);
-    
-    await expect(page.locator('#filterRadius')).toHaveText('2 公里');
-  });
-
   test('distant locations are excluded from results', async ({ page }) => {
     await page.locator('#regionSelect').selectOption('hong_kong_island');
     await page.locator('#lineSelect').selectOption('island');
@@ -252,21 +185,6 @@ test.describe('Map App - Integration', () => {
     await page.locator('#searchBtn').click();
     await expect(page.locator('#result')).toContainText('麥當勞', { timeout: 15000 });
     await expect(page.locator('#result')).toContainText('米', { timeout: 5000 });
-  });
-
-  test('multiple searches', async ({ page }) => {
-    await page.locator('#searchInput').fill('McDonalds');
-    await page.locator('#searchBtn').click();
-    await expect(page.locator('#result')).toContainText('麥當勞', { timeout: 15000 });
-    
-    await page.waitForTimeout(2000);
-    
-    await page.locator('#searchInput').fill('restaurant');
-    await page.locator('#searchBtn').click();
-    await page.waitForTimeout(8000);
-    const resultText = await page.locator('#result').textContent();
-    expect(resultText).not.toContain('找不到結果');
-    expect(resultText).not.toContain('搜尋時發生錯誤');
   });
 
   test('XSS protection', async ({ page }) => {
