@@ -203,8 +203,11 @@ async function searchOverpass(query, bounds = HK_BOUNDS, station = null) {
   const data = await response.json();
   
   // Transform Overpass results to standard format
+  // Prefer Traditional Chinese names, then English, then generic name
   let results = data.elements.map((element, idx) => {
-    const name = element.tags?.name || element.tags?.['name:en'] || 'Unknown';
+    const tags = element.tags || {};
+    // Priority: name:zh-HK > name:zh-TW > name:zh > name:en > name
+    const name = tags['name:zh-HK'] || tags['name:zh-TW'] || tags['name:zh'] || tags.name || tags['name:en'] || 'Unknown';
     const lat = element.lat || element.center?.lat;
     const lon = element.lon || element.center?.lon;
     
@@ -214,7 +217,7 @@ async function searchOverpass(query, bounds = HK_BOUNDS, station = null) {
       lat: lat.toString(),
       lon: lon.toString(),
       type: element.tags?.amenity || element.type,
-      tags: element.tags || {}
+      tags: tags
     };
     
     // Calculate distance from station if provided
@@ -239,10 +242,14 @@ async function searchOverpass(query, bounds = HK_BOUNDS, station = null) {
  * @returns {Promise<Array>} - Array of search results
  */
 async function searchNominatim(query) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(query)}`;
+  // Use Traditional Chinese (zh-HK) as default, or English based on current language
+  const lang = window.I18N && window.I18N.currentLang ? window.I18N.currentLang : 'zh-HK';
+  const acceptLang = lang === 'en' ? 'en' : 'zh-HK,zh-TW,zh';
+  
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(query)}&accept-language=${encodeURIComponent(acceptLang)}`;
   
   const response = await fetch(url, {
-    headers: { 'Accept-Language': 'en' }
+    headers: { 'Accept-Language': acceptLang }
   });
   return response.json();
 }
@@ -288,10 +295,15 @@ function escapeHtml(text) {
  * @returns {string} - Formatted distance
  */
 function formatDistance(distanceKm) {
+  const i18n = window.I18N;
+  const lang = i18n ? i18n.currentLang : 'zh-HK';
+  
   if (distanceKm < 1) {
-    return `${Math.round(distanceKm * 1000)}m`;
+    const meters = Math.round(distanceKm * 1000);
+    return lang === 'en' ? `${meters}m` : `${meters}米`;
   }
-  return `${distanceKm.toFixed(1)}km`;
+  const km = distanceKm.toFixed(1);
+  return lang === 'en' ? `${km}km` : `${km}公里`;
 }
 
 /**
@@ -302,8 +314,11 @@ function formatDistance(distanceKm) {
  * @param {number} radius - Search radius used
  */
 function renderResults(results, resultDiv, station = null, radius = null) {
+  const i18n = window.I18N;
+  const lang = i18n ? i18n.currentLang : 'zh-HK';
+  
   if (!results || results.length === 0) {
-    resultDiv.textContent = 'No results found.';
+    resultDiv.textContent = i18n ? i18n.t('noResults') : 'No results found.';
     return;
   }
   
@@ -311,10 +326,14 @@ function renderResults(results, resultDiv, station = null, radius = null) {
   
   // Show active filter info
   if (station) {
+    const searchingText = i18n ? i18n.t('searchingNear') : 'Searching near:';
+    const radiusText = i18n ? i18n.t('radius') : 'radius';
+    const radiusLabel = lang === 'en' ? `${radius}km` : `${radius}公里`;
+    
     html += `<div style="background:#e8f4fd; border:1px solid #3498db; border-radius:4px; padding:0.75rem; margin-bottom:1rem; text-align:left;">
       <div style="color:#2c3e50; font-weight:bold;">
-        <span style="color:#3498db;">🚇</span> Searching near: <strong>${escapeHtml(station.name)} MTR</strong>
-        <span style="color:#666; font-weight:normal;">(${radius}km radius)</span>
+        <span style="color:#3498db;">🚇</span> ${searchingText} <strong>${escapeHtml(station.name)} MTR</strong>
+        <span style="color:#666; font-weight:normal;">(${radiusLabel} ${radiusText})</span>
       </div>
     </div>`;
   }
@@ -405,13 +424,14 @@ function initSearch() {
   // Search function
   function doSearch() {
     const query = searchInput.value.trim();
+    const i18n = window.I18N;
     
     if (!query) {
-      resultDiv.textContent = 'Please enter an address.';
+      resultDiv.textContent = i18n ? i18n.t('pleaseEnterAddress') : 'Please enter an address.';
       return;
     }
     
-    resultDiv.textContent = 'Searching...';
+    resultDiv.textContent = i18n ? i18n.t('searching') : 'Searching...';
     
     // Check if query mentions a station
     let station = getActiveStationFilter();
@@ -428,7 +448,7 @@ function initSearch() {
       })
       .catch(err => {
         console.error('Search error:', err);
-        resultDiv.textContent = 'Error while searching.';
+        resultDiv.textContent = i18n ? i18n.t('searchError') : 'Error while searching.';
       });
   }
   

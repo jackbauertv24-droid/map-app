@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <title>Map-App - MTR Station Search</title>
+    <title data-i18n="appTitle">地圖應用程式</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body {font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin:0; padding:0; background:#f7f7f7; color:#333; display:flex; flex-direction:column; min-height:100vh;}
+        body {font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Traditional Chinese', 'Microsoft JhengHei', Helvetica, Arial, sans-serif; margin:0; padding:0; background:#f7f7f7; color:#333; display:flex; flex-direction:column; min-height:100vh;}
         header {background:#2c3e50; color:#fff; padding:1rem; text-align:center;}
+        .lang-selector {position:absolute; top:1rem; right:1rem;}
+        .lang-selector select {background:#fff; color:#2c3e50; border:none; border-radius:4px; padding:0.25rem 0.5rem; font-size:0.9rem; cursor:pointer;}
         main {flex:1; display:flex; flex-direction:column; align-items:center; padding:2rem; max-width:800px; margin:0 auto; width:100%; box-sizing:border-box;}
         .search-container {background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); padding:1.5rem; width:100%; box-sizing:border-box; margin-bottom:1rem;}
         .dropdown-row {display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap;}
@@ -25,6 +27,7 @@
         h2 {margin:0 0 1rem 0; color:#2c3e50; font-size:1.25rem;}
         
         @media (max-width: 600px) {
+            .lang-selector {position:static; margin-bottom:1rem; text-align:center;}
             .dropdown-row {flex-direction:column;}
             .dropdown-group {min-width:100%;}
             .search-row {flex-direction:column;}
@@ -35,44 +38,50 @@
 </head>
 <body>
     <header>
-        <h1>Map-App</h1>
-        <p>Search by MTR Station</p>
+        <h1 data-i18n="appTitle">地圖應用程式</h1>
+        <p data-i18n="appSubtitle">按港鐵站搜尋</p>
+        <div class="lang-selector">
+            <select id="langSelect" aria-label="Language / 語言">
+                <option value="zh-HK">繁體中文</option>
+                <option value="en">English</option>
+            </select>
+        </div>
     </header>
     <main>
         <div class="search-container">
-            <h2>Select MTR Station</h2>
+            <h2 data-i18n="selectMTRStation">選擇港鐵站</h2>
             
             <!-- Region Selector (Level 1) -->
             <div class="dropdown-row">
                 <div class="dropdown-group">
-                    <label for="regionSelect">Region</label>
+                    <label for="regionSelect" data-i18n="regionLabel">地區</label>
                     <select id="regionSelect">
-                        <option value="">All Hong Kong</option>
-                        <option value="hong_kong_island">Hong Kong Island</option>
-                        <option value="kowloon">Kowloon</option>
-                        <option value="new_territories">New Territories</option>
+                        <option value="" data-i18n="allHongKong">全香港</option>
+                        <option value="hong_kong_island" data-i18n="hongKongIsland">港島</option>
+                        <option value="kowloon" data-i18n="kowloon">九龍</option>
+                        <option value="new_territories" data-i18n="newTerritories">新界</option>
                     </select>
                 </div>
                 
                 <!-- Line Selector (Level 2) -->
                 <div class="dropdown-group">
-                    <label for="lineSelect">MTR Line</label>
+                    <label for="lineSelect" data-i18n="lineLabel">路綫</label>
                     <select id="lineSelect" disabled>
-                        <option value="">Select Line</option>
+                        <option value="" data-i18n="selectLine">選擇路綫</option>
                     </select>
                 </div>
                 
                 <!-- Station Selector (Level 3) -->
                 <div class="dropdown-group">
-                    <label for="stationSelect">Station</label>
+                    <label for="stationSelect" data-i18n="stationLabel">車站</label>
                     <select id="stationSelect" disabled>
-                        <option value="">Select Station</option>
+                        <option value="" data-i18n="selectStation">選擇車站</option>
                     </select>
                 </div>
                 
                 <!-- Radius Selector -->
                 <div class="dropdown-group" style="flex:0 0 120px;">
-                    <label for="radiusSelect">Radius</label>
+                    <label for="radiusSelect" data-i18n="radiusLabel">範圍</label>
                     <select id="radiusSelect">
                         <option value="0.5">500m</option>
                         <option value="1" selected>1km</option>
@@ -84,26 +93,40 @@
             </div>
             
             <!-- Search Input -->
-            <h2>Search POI or Address</h2>
+            <h2 data-i18n="searchPOI">搜尋地點或地址</h2>
             <div class="search-row">
-                <input id="searchInput" type="text" placeholder="Enter address or POI (e.g., McDonalds, restaurants)"/>
-                <button id="searchBtn">Search</button>
+                <input id="searchInput" type="text" data-i18n="searchPlaceholder" placeholder="輸入地點或地址 (例如：麥當勞，餐廳)"/>
+                <button id="searchBtn" data-i18n="searchBtn">搜尋</button>
             </div>
         </div>
         
         <!-- Active Filter Display -->
         <div id="activeFilter" class="filter-badge" style="display:none;">
-            <span>Searching near: <strong id="filterStation"></strong> MTR</span>
-            <span>(<span id="filterRadius"></span> radius)</span>
-            <button id="clearFilter" title="Clear filter">✕</button>
+            <span><span data-i18n="searchingNear">搜尋附近：</span><strong id="filterStation"></strong> MTR</span>
+            <span>(<span id="filterRadius"></span> <span data-i18n="radius">範圍內</span>)</span>
+            <button id="clearFilter" title="" data-i18n="clearFilter">清除篩選</button>
         </div>
         
         <!-- Results Area -->
         <div id="result"></div>
     </main>
     
+    <script src="src/i18n.js"></script>
     <script src="src/mtr-stations.js"></script>
     <script src="src/dropdowns.js"></script>
     <script src="src/search.js"></script>
+    <script>
+        // Initialize i18n after DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => I18N.init());
+        } else {
+            I18N.init();
+        }
+        
+        // Language selector change handler
+        document.getElementById('langSelect').addEventListener('change', (e) => {
+            I18N.setLanguage(e.target.value);
+        });
+    </script>
 </body>
 </html>

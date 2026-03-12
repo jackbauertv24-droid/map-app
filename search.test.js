@@ -10,7 +10,8 @@ describe('Map App', () => {
   test('index.html contains search input', () => {
     const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
     expect(html).toContain('searchInput');
-    expect(html).toContain('Enter address or POI');
+    // Default is Traditional Chinese
+    expect(html).toContain('輸入地點或地址');
   });
 
   test('index.html contains search button', () => {
@@ -188,11 +189,12 @@ describe('Distance Calculation', () => {
     expect(distance).toBeLessThan(5);
   });
 
-  test('formats distance correctly', () => {
-    expect(formatDistance(0.5)).toBe('500m');
-    expect(formatDistance(0.35)).toBe('350m');
-    expect(formatDistance(1.5)).toBe('1.5km');
-    expect(formatDistance(2.3)).toBe('2.3km');
+  test('formats distance correctly (default Traditional Chinese)', () => {
+    // Default is Traditional Chinese when I18N is not set
+    expect(formatDistance(0.5)).toBe('500米');
+    expect(formatDistance(0.35)).toBe('350米');
+    expect(formatDistance(1.5)).toBe('1.5公里');
+    expect(formatDistance(2.3)).toBe('2.3公里');
   });
 });
 

@@ -2,18 +2,34 @@
 // Handles region -> line -> station selection flow
 
 /**
+ * Get translated text from i18n
+ */
+function t(key) {
+  if (window.I18N) {
+    return window.I18N.t(key);
+  }
+  const defaults = {
+    selectLine: 'Select Line',
+    selectStation: 'Select Station'
+  };
+  return defaults[key] || key;
+}
+
+/**
+ * Get current language
+ */
+function getCurrentLang() {
+  return window.I18N ? window.I18N.currentLang : 'zh-HK';
+}
+
+/**
  * Initialize MTR dropdown cascade
  */
 function initMTRDropdowns() {
-  console.log('[dropdowns] initMTRDropdowns called');
-  console.log('[dropdowns] window.MTR_DATA exists:', !!window.MTR_DATA);
-  
   if (!window.MTR_DATA) {
     console.error('MTR_DATA not loaded. Ensure mtr-stations.js is loaded before dropdowns.js');
     return;
   }
-  
-  console.log('[dropdowns] MTR_DATA regions:', Object.keys(window.MTR_DATA));
   
   const regionSelect = document.getElementById('regionSelect');
   const lineSelect = document.getElementById('lineSelect');
@@ -26,16 +42,14 @@ function initMTRDropdowns() {
   }
   
   // Region change → populate lines
-  console.log('[dropdowns] Adding region change listener');
   regionSelect.addEventListener('change', () => {
-    console.log('[dropdowns] Region changed to:', regionSelect.value);
     const regionKey = regionSelect.value;
     
     if (!regionKey) {
       lineSelect.disabled = true;
       stationSelect.disabled = true;
-      lineSelect.innerHTML = '<option value="">Select Line</option>';
-      stationSelect.innerHTML = '<option value="">Select Station</option>';
+      lineSelect.innerHTML = `<option value="">${t('selectLine')}</option>`;
+      stationSelect.innerHTML = `<option value="">${t('selectStation')}</option>`;
       clearStationFilter();
       return;
     }
@@ -44,7 +58,7 @@ function initMTRDropdowns() {
     if (!region) return;
     
     // Populate lines for selected region
-    lineSelect.innerHTML = '<option value="">Select Line</option>';
+    lineSelect.innerHTML = `<option value="">${t('selectLine')}</option>`;
     Object.keys(region.lines).forEach(lineKey => {
       const line = region.lines[lineKey];
       const option = document.createElement('option');
@@ -54,7 +68,7 @@ function initMTRDropdowns() {
     });
     lineSelect.disabled = false;
     stationSelect.disabled = true;
-    stationSelect.innerHTML = '<option value="">Select Station</option>';
+    stationSelect.innerHTML = `<option value="">${t('selectStation')}</option>`;
   });
   
   // Line change → populate stations
@@ -64,7 +78,7 @@ function initMTRDropdowns() {
     
     if (!regionKey || !lineKey) {
       stationSelect.disabled = true;
-      stationSelect.innerHTML = '<option value="">Select Station</option>';
+      stationSelect.innerHTML = `<option value="">${t('selectStation')}</option>`;
       clearStationFilter();
       return;
     }
@@ -75,7 +89,7 @@ function initMTRDropdowns() {
     if (!line) return;
     
     // Populate stations for selected line
-    stationSelect.innerHTML = '<option value="">Select Station</option>';
+    stationSelect.innerHTML = `<option value="">${t('selectStation')}</option>`;
     line.stations.forEach(station => {
       const option = document.createElement('option');
       option.value = JSON.stringify({
@@ -132,6 +146,25 @@ function initMTRDropdowns() {
       }
     });
   }
+  
+  // Listen for language changes to update dropdown placeholders
+  window.addEventListener('languageChanged', () => {
+    // Update line select placeholder if it's empty
+    if (lineSelect.disabled || !lineSelect.value) {
+      const defaultOption = lineSelect.querySelector('option[value=""]');
+      if (defaultOption) {
+        defaultOption.textContent = t('selectLine');
+      }
+    }
+    
+    // Update station select placeholder if it's empty
+    if (stationSelect.disabled || !stationSelect.value) {
+      const defaultOption = stationSelect.querySelector('option[value=""]');
+      if (defaultOption) {
+        defaultOption.textContent = t('selectStation');
+      }
+    }
+  });
 }
 
 /**
@@ -154,10 +187,12 @@ function updateActiveFilterDisplay(station, radius) {
   const filterDiv = document.getElementById('activeFilter');
   const filterStation = document.getElementById('filterStation');
   const filterRadius = document.getElementById('filterRadius');
+  const lang = getCurrentLang();
   
   if (station && filterDiv && filterStation && filterRadius) {
     filterStation.textContent = station.name;
-    filterRadius.textContent = `${radius}km`;
+    const radiusLabel = lang === 'en' ? `${radius}km` : `${radius}公里`;
+    filterRadius.textContent = radiusLabel;
     filterDiv.style.display = 'block';
   } else if (filterDiv) {
     filterDiv.style.display = 'none';
