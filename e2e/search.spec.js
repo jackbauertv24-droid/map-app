@@ -50,24 +50,24 @@ test.describe('Map App - Dropdowns', () => {
     await page.locator('#lineSelect').selectOption('island');
     await expect(page.locator('#stationSelect')).not.toBeDisabled();
     const options = await page.locator('#stationSelect option').allTextContents();
-    expect(options).toContain('Central');
+    expect(options).toContain('中環');
     expect(options.length).toBeGreaterThan(1);
   });
 
   test('station selection shows filter badge', async ({ page }) => {
     await page.locator('#regionSelect').selectOption('hong_kong_island');
     await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('Central');
+    await page.locator('#stationSelect').selectOption('中環');
     await page.waitForTimeout(500);
     await expect(page.locator('#activeFilter')).toBeVisible();
-    await expect(page.locator('#filterStation')).toHaveText('Central');
+    await expect(page.locator('#filterStation')).toHaveText('中環');
     await expect(page.locator('#filterRadius')).toHaveText('1 公里');
   });
 
   test('clear filter button works', async ({ page }) => {
     await page.locator('#regionSelect').selectOption('hong_kong_island');
     await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('Central');
+    await page.locator('#stationSelect').selectOption('中環');
     await page.locator('#clearFilter').click();
     await expect(page.locator('#activeFilter')).not.toBeVisible();
   });
@@ -85,7 +85,7 @@ test.describe('Map App - Dropdowns', () => {
   test('filter badge shows correct radius units', async ({ page }) => {
     await page.locator('#regionSelect').selectOption('hong_kong_island');
     await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('Central');
+    await page.locator('#stationSelect').selectOption('中環');
     await page.waitForTimeout(500);
     await expect(page.locator('#filterRadius')).toHaveText('1 公里');
     
@@ -111,7 +111,7 @@ test.describe('Map App - Search (Real API)', () => {
   test('search with station shows distance in Chinese', async ({ page }) => {
     await page.locator('#regionSelect').selectOption('hong_kong_island');
     await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('Central');
+    await page.locator('#stationSelect').selectOption('中環');
     await page.waitForTimeout(500);
     await page.locator('#searchInput').fill('McDonalds');
     await page.locator('#searchBtn').click();
@@ -121,7 +121,7 @@ test.describe('Map App - Search (Real API)', () => {
   test('search results are filtered by 500m radius', async ({ page }) => {
     await page.locator('#regionSelect').selectOption('hong_kong_island');
     await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('Central');
+    await page.locator('#stationSelect').selectOption('中環');
     await page.locator('#radiusSelect').selectOption('0.5');
     await page.waitForTimeout(500);
     
@@ -138,7 +138,7 @@ test.describe('Map App - Search (Real API)', () => {
   test('search results are filtered by 2km radius', async ({ page }) => {
     await page.locator('#regionSelect').selectOption('hong_kong_island');
     await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('Central');
+    await page.locator('#stationSelect').selectOption('中環');
     await page.locator('#radiusSelect').selectOption('2');
     await page.waitForTimeout(500);
     
@@ -155,7 +155,7 @@ test.describe('Map App - Search (Real API)', () => {
   test('changing radius re-searches with new radius', async ({ page }) => {
     await page.locator('#regionSelect').selectOption('hong_kong_island');
     await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('Central');
+    await page.locator('#stationSelect').selectOption('中環');
     await page.locator('#radiusSelect').selectOption('0.5');
     await page.waitForTimeout(500);
     
@@ -172,7 +172,7 @@ test.describe('Map App - Search (Real API)', () => {
   test('distant locations are excluded from results', async ({ page }) => {
     await page.locator('#regionSelect').selectOption('hong_kong_island');
     await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('Central');
+    await page.locator('#stationSelect').selectOption('中環');
     await page.locator('#radiusSelect').selectOption('0.5');
     await page.waitForTimeout(500);
     
@@ -245,7 +245,7 @@ test.describe('Map App - Integration', () => {
   test('full workflow: select station and search', async ({ page }) => {
     await page.locator('#regionSelect').selectOption('hong_kong_island');
     await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('Central');
+    await page.locator('#stationSelect').selectOption('中環');
     await page.waitForTimeout(500);
     
     await page.locator('#searchInput').fill('McDonalds');
@@ -368,11 +368,12 @@ test.describe('Map App - Traditional Chinese UI Verification', () => {
   test('filter badge displays in Traditional Chinese', async ({ page }) => {
     await page.locator('#regionSelect').selectOption('hong_kong_island');
     await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('Central');
+    await page.locator('#stationSelect').selectOption('中環');
     await page.waitForTimeout(500);
     
     const filterText = await page.locator('#activeFilter').textContent();
     expect(filterText).toContain('搜尋附近：');
+    expect(filterText).toContain('中環');
     expect(filterText).toContain('範圍內');
     expect(filterText).toContain('公里');
   });
@@ -392,7 +393,7 @@ test.describe('Map App - Traditional Chinese UI Verification', () => {
   test('distance units display in Traditional Chinese', async ({ page }) => {
     await page.locator('#regionSelect').selectOption('hong_kong_island');
     await page.locator('#lineSelect').selectOption('island');
-    await page.locator('#stationSelect').selectOption('Central');
+    await page.locator('#stationSelect').selectOption('中環');
     await page.locator('#radiusSelect').selectOption('0.5');
     await page.waitForTimeout(500);
     await page.locator('#searchInput').fill('McDonalds');
@@ -408,9 +409,9 @@ test.describe('Map App - Traditional Chinese UI Verification', () => {
     await expect(page.locator('#stationSelect')).not.toBeDisabled();
     
     const stationOptions = await page.locator('#stationSelect option').allTextContents();
-    expect(stationOptions).toContain('Kennedy Town');
-    expect(stationOptions).toContain('Central');
-    expect(stationOptions).toContain('Admiralty');
-    expect(stationOptions).toContain('Chai Wan');
+    expect(stationOptions).toContain('堅尼地城');
+    expect(stationOptions).toContain('中環');
+    expect(stationOptions).toContain('金鐘');
+    expect(stationOptions).toContain('柴灣');
   });
 });
