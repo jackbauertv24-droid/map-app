@@ -1,7 +1,11 @@
 // Internationalization (i18n) module
+// Schema version - increment when localStorage structure changes
+const I18N_SCHEMA_VERSION = 1;
+
 const I18N = {
   defaultLang: 'zh-HK',
   currentLang: 'zh-HK',
+  schemaVersion: I18N_SCHEMA_VERSION,
   
   translations: {
     'zh-HK': {
@@ -60,7 +64,34 @@ const I18N = {
     }
   },
   
+  _checkAndMigrateStorage() {
+    try {
+      const storedVersion = localStorage.getItem('i18n_schema_version');
+      const currentVersion = this.schemaVersion;
+      
+      if (!storedVersion) {
+        localStorage.setItem('i18n_schema_version', currentVersion.toString());
+        return;
+      }
+      
+      const parsedVersion = parseInt(storedVersion, 10);
+      
+      if (isNaN(parsedVersion) || parsedVersion < currentVersion) {
+        console.log(`[I18N] Migrating storage from v${parsedVersion} to v${currentVersion}`);
+        localStorage.clear();
+        localStorage.setItem('i18n_schema_version', currentVersion.toString());
+        localStorage.setItem('preferredLang', this.defaultLang);
+        console.log(`[I18N] Storage cleared and reset to default language: ${this.defaultLang}`);
+      }
+    } catch (e) {
+      console.error('[I18N] Storage migration error:', e);
+      localStorage.setItem('i18n_schema_version', this.schemaVersion.toString());
+    }
+  },
+  
   init() {
+    this._checkAndMigrateStorage();
+    
     const savedLang = localStorage.getItem('preferredLang');
     if (savedLang && this.translations[savedLang]) {
       this.currentLang = savedLang;
