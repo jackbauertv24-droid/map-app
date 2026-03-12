@@ -31,68 +31,65 @@ describe('Map App', () => {
   });
 });
 
-describe('Search Type Detection', () => {
-  const { detectSearchType, API_PROVIDERS, POI_KEYWORDS } = require('./src/search');
-
-  test('detects POI keywords - McDonalds', () => {
-    expect(detectSearchType('McDonalds in Hong Kong')).toBe(API_PROVIDERS.OVERPASS);
-    expect(detectSearchType('mcdonalds')).toBe(API_PROVIDERS.OVERPASS);
-  });
-
-  test('detects POI keywords - various restaurants', () => {
-    expect(detectSearchType('KFC')).toBe(API_PROVIDERS.OVERPASS);
-    expect(detectSearchType('Starbucks')).toBe(API_PROVIDERS.OVERPASS);
-    expect(detectSearchType('Burger King')).toBe(API_PROVIDERS.OVERPASS);
-    expect(detectSearchType('restaurant')).toBe(API_PROVIDERS.OVERPASS);
-  });
-
-  test('detects POI keywords - amenities', () => {
-    expect(detectSearchType('hotel')).toBe(API_PROVIDERS.OVERPASS);
-    expect(detectSearchType('hospital')).toBe(API_PROVIDERS.OVERPASS);
-    expect(detectSearchType('school')).toBe(API_PROVIDERS.OVERPASS);
-    expect(detectSearchType('park')).toBe(API_PROVIDERS.OVERPASS);
-  });
-
-  test('detects location modifiers', () => {
-    expect(detectSearchType('shops in Central')).toBe(API_PROVIDERS.OVERPASS);
-    expect(detectSearchType('cafes near Tsim Sha Tsui')).toBe(API_PROVIDERS.OVERPASS);
-  });
-
-  test('defaults to Nominatim for address searches', () => {
-    expect(detectSearchType('123 Main Street')).toBe(API_PROVIDERS.NOMINATIM);
-    expect(detectSearchType('Paris, France')).toBe(API_PROVIDERS.NOMINATIM);
-    expect(detectSearchType('Hong Kong International Airport')).toBe(API_PROVIDERS.NOMINATIM);
-  });
-});
-
 describe('Overpass Query Building', () => {
   const { buildOverpassQuery, HK_BOUNDS } = require('./src/search');
 
-  test('builds query for McDonalds', () => {
-    const query = buildOverpassQuery('McDonalds in Hong Kong');
+  test('builds query for McDonalds with name filter', () => {
+    const query = buildOverpassQuery('McDonalds');
     expect(query).toContain('[out:json]');
-    expect(query).toContain('node["amenity"="fast_food"]["name"~"McDonald"');
-    expect(query).toContain(HK_BOUNDS.latMin.toString());
+    expect(query).toContain('["name"~"McDonald",i]');
   });
 
-  test('builds query for restaurants', () => {
-    const query = buildOverpassQuery('restaurants');
-    expect(query).toContain('node["amenity"="restaurant"]');
+  test('builds query for KFC', () => {
+    const query = buildOverpassQuery('KFC');
+    expect(query).toContain('["name"~"KFC",i]');
+  });
+
+  test('builds query for Starbucks', () => {
+    const query = buildOverpassQuery('Starbucks');
+    expect(query).toContain('["name"~"Starbucks",i]');
+  });
+
+  test('builds query for Burger King', () => {
+    const query = buildOverpassQuery('Burger King');
+    expect(query).toContain('["name"~"Burger King",i]');
+  });
+
+  test('builds query for restaurants by amenity type', () => {
+    const query = buildOverpassQuery('restaurant');
+    expect(query).toContain('["amenity"="restaurant"]');
   });
 
   test('builds query for cafes', () => {
-    const query = buildOverpassQuery('coffee shops');
-    expect(query).toContain('node["amenity"="cafe"]');
+    const query = buildOverpassQuery('coffee');
+    expect(query).toContain('["amenity"="cafe"]');
   });
 
-  test('includes bounding box coordinates', () => {
+  test('builds query for hotels', () => {
+    const query = buildOverpassQuery('hotel');
+    expect(query).toContain('["amenity"="hotel"]');
+  });
+
+  test('builds query with Chinese amenity terms', () => {
+    const query = buildOverpassQuery('餐廳');
+    expect(query).toContain('["amenity"="restaurant"]');
+  });
+
+  test('builds query with bounding box', () => {
     const query = buildOverpassQuery('hotels');
     expect(query).toContain('22.15');
     expect(query).toContain('113.8');
     expect(query).toContain('22.55');
     expect(query).toContain('114.45');
   });
+
+  test('builds generic query for unknown terms', () => {
+    const query = buildOverpassQuery('Victoria Peak');
+    expect(query).toContain('["name"~"Victoria Peak",i]');
+  });
 });
+
+
 
 describe('Search Functionality - renderResults', () => {
   const { renderResults, escapeHtml } = require('./src/search');

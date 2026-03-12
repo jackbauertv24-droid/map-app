@@ -1,8 +1,5 @@
-// Search API providers
-const API_PROVIDERS = {
-  OVERPASS: 'overpass',
-  NOMINATIM: 'nominatim'
-};
+// Overpass API configuration
+const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 
 // Hong Kong bounding box for POI searches
 const HK_BOUNDS = {
@@ -172,30 +169,10 @@ function detectStationFromQuery(query) {
   return null;
 }
 
-/**
- * Detect if query is POI-focused or address-focused
- * @param {string} query - User search query
- * @returns {string} - API provider to use
- */
-function detectSearchType(query) {
-  const lowerQuery = query.toLowerCase();
-  
-  // Check for POI keywords
-  if (POI_KEYWORDS.some(keyword => lowerQuery.includes(keyword))) {
-    return API_PROVIDERS.OVERPASS;
-  }
-  
-  // Check for location modifiers (e.g., "in Hong Kong", "near Central")
-  if (lowerQuery.includes(' in ') || lowerQuery.includes(' near ')) {
-    return API_PROVIDERS.OVERPASS;
-  }
-  
-  // Default to Nominatim for address searches
-  return API_PROVIDERS.NOMINATIM;
-}
+
 
 /**
- * Build Overpass API query for POI search
+ * Build Overpass API query for search
  * @param {string} query - User search query
  * @param {object} bounds - Geographic bounds
  * @returns {string} - Overpass QL query
@@ -203,18 +180,16 @@ function detectSearchType(query) {
 function buildOverpassQuery(query, bounds = HK_BOUNDS) {
   const lowerQuery = query.toLowerCase();
   
-  // Extract POI type and location from query
-  let poiType = 'fast_food';
-  let namePattern = query;
+  let poiType = null;
+  let namePattern = null;
   let useMultiTagQuery = false;
   
   // Check if query matches a Chinese amenity term first
   for (const [zhTerm, amenity] of Object.entries(CHINESE_TO_AMENITY)) {
     if (lowerQuery === zhTerm.toLowerCase() || lowerQuery.includes(zhTerm.toLowerCase())) {
       poiType = amenity;
-      namePattern = '';
       
-      // Special handling for transportation hubs that use different tagging schemes
+      // Special handling for transportation hubs
       if (amenity === 'bus_station') {
         useMultiTagQuery = true;
       } else if (amenity === 'ferry_terminal') {
@@ -225,25 +200,30 @@ function buildOverpassQuery(query, bounds = HK_BOUNDS) {
   }
   
   // If no Chinese match, check English terms
-  if (namePattern === query) {
+  if (!poiType) {
     if (lowerQuery.includes('mcdonald') || lowerQuery.includes('麥當勞')) {
       poiType = 'fast_food';
       namePattern = 'McDonald';
+    } else if (lowerQuery.includes('burger king')) {
+      poiType = 'fast_food';
+      namePattern = 'Burger King';
+    } else if (lowerQuery.includes('kfc')) {
+      poiType = 'fast_food';
+      namePattern = 'KFC';
+    } else if (lowerQuery.includes('starbucks')) {
+      poiType = 'cafe';
+      namePattern = 'Starbucks';
     } else if (lowerQuery.includes('burger')) {
       poiType = 'fast_food';
       namePattern = 'Burger';
     } else if (lowerQuery.includes('restaurant')) {
       poiType = 'restaurant';
-      namePattern = '';
     } else if (lowerQuery.includes('cafe') || lowerQuery.includes('coffee')) {
       poiType = 'cafe';
-      namePattern = '';
     } else if (lowerQuery.includes('hotel')) {
       poiType = 'hotel';
-      namePattern = '';
     } else if (lowerQuery.includes('fast_food') || lowerQuery.includes('快餐')) {
       poiType = 'fast_food';
-      namePattern = '';
     }
   }
   
@@ -252,26 +232,25 @@ function buildOverpassQuery(query, bounds = HK_BOUNDS) {
   queryStr += `(`;
   
   if (useMultiTagQuery && poiType === 'bus_station') {
-    // Bus terminals in HK are mostly tagged as highway=bus_stop with names containing 總站
-    // Also include amenity=bus_station
     queryStr += `node["amenity"="bus_station"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
     queryStr += `way["amenity"="bus_station"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
-    // Search for bus stops with names containing 總站 (most common in HK)
     queryStr += `node["highway"="bus_stop"]["name"~"總站"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
   } else if (useMultiTagQuery && poiType === 'ferry_terminal') {
-    // Ferry terminals may use amenity=ferry_terminal or public_transport=station + ferry=yes
     queryStr += `node["amenity"="ferry_terminal"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
     queryStr += `way["amenity"="ferry_terminal"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
     queryStr += `node["public_transport"="station"]["ferry"="yes"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
-    queryStr += `node["amenity"="ferry_terminal"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
   } else if (namePattern) {
-    // Search by name pattern
-    queryStr += `node["amenity"="${poiType}"]["name"~"${namePattern}",i](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
-    queryStr += `way["amenity"="${poiType}"]["name"~"${namePattern}",i](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
-  } else {
+    // Search by brand/name with flexible amenity types
+    queryStr += `node["name"~"${namePattern}",i](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
+    queryStr += `way["name"~"${namePattern}",i](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
+  } else if (poiType) {
     // Search by amenity type only
     queryStr += `node["amenity"="${poiType}"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
     queryStr += `way["amenity"="${poiType}"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
+  } else {
+    // Generic search - try name tag for landmarks/places
+    queryStr += `node["name"~"${query}",i](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
+    queryStr += `way["name"~"${query}",i](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
   }
   
   queryStr += `);out center;`;
@@ -308,7 +287,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
  */
 async function searchOverpass(query, bounds = HK_BOUNDS, station = null, radiusKm = DEFAULT_RADIUS_KM) {
   const overpassQuery = buildOverpassQuery(query, bounds);
-  const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`;
+  const url = `${OVERPASS_URL}?data=${encodeURIComponent(overpassQuery)}`;
   
   const response = await fetch(url);
   const data = await response.json();
@@ -349,40 +328,7 @@ async function searchOverpass(query, bounds = HK_BOUNDS, station = null, radiusK
 }
 
 /**
- * Search using Nominatim API
- * @param {string} query - User search query
- * @param {object} station - Optional station object for distance calculation
- * @param {number} radiusKm - Optional search radius in kilometers
- * @returns {Promise<Array>} - Array of search results
- */
-async function searchNominatim(query, station = null, radiusKm = DEFAULT_RADIUS_KM) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=20&viewbox=113.8,22.15,114.45,22.55&bounded=1&q=${encodeURIComponent(query)}&accept-language=zh`;
-  
-  const response = await fetch(url, {
-    headers: { 'Accept-Language': 'zh' }
-  });
-  let results = await response.json();
-  
-  // Calculate distances and filter by radius if station is provided
-  if (station && results && results.length > 0) {
-    results = results.map(result => {
-      const lat = parseFloat(result.lat);
-      const lon = parseFloat(result.lon);
-      const distance = calculateDistance(station.lat, station.lon, lat, lon);
-      return { ...result, distance };
-    });
-    
-    // Filter by radius and sort by distance
-    results = results
-      .filter(r => r.distance <= radiusKm)
-      .sort((a, b) => a.distance - b.distance);
-  }
-  
-  return results;
-}
-
-/**
- * Main search function - routes to appropriate API
+ * Main search function - uses Overpass API
  * @param {string} query - User search query
  * @param {object} station - Optional station object for proximity search
  * @param {number} radiusKm - Search radius in kilometers
@@ -396,13 +342,7 @@ async function performSearch(query, station = null, radiusKm = DEFAULT_RADIUS_KM
     bounds = calculateStationBounds(station.lat, station.lon, radiusKm);
   }
   
-  const searchType = detectSearchType(query);
-  
-  if (searchType === API_PROVIDERS.OVERPASS) {
-    return searchOverpass(query, bounds, station, radiusKm);
-  } else {
-    return searchNominatim(query, station, radiusKm);
-  }
+  return searchOverpass(query, bounds, station, radiusKm);
 }
 
 /**
@@ -639,10 +579,8 @@ if (document.readyState === 'loading') {
 // Export for testing
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    detectSearchType,
     buildOverpassQuery,
     searchOverpass,
-    searchNominatim,
     performSearch,
     escapeHtml,
     renderResults,
@@ -650,7 +588,6 @@ if (typeof module !== 'undefined' && module.exports) {
     detectStationFromQuery,
     calculateDistance,
     formatDistance,
-    API_PROVIDERS,
     POI_KEYWORDS,
     CHINESE_TO_AMENITY,
     HK_BOUNDS,
