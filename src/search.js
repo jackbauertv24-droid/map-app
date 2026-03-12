@@ -195,7 +195,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
  * @param {object} station - Station object for distance calculation
  * @returns {Promise<Array>} - Array of search results
  */
-async function searchOverpass(query, bounds = HK_BOUNDS, station = null) {
+async function searchOverpass(query, bounds = HK_BOUNDS, station = null, radiusKm = DEFAULT_RADIUS_KM) {
   const overpassQuery = buildOverpassQuery(query, bounds);
   const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`;
   
@@ -228,8 +228,9 @@ async function searchOverpass(query, bounds = HK_BOUNDS, station = null) {
     return result;
   });
   
-  // Sort by distance if station is provided
+  // Filter by radius if station is provided
   if (station) {
+    results = results.filter(r => r.distance !== undefined && r.distance <= radiusKm);
     results.sort((a, b) => (a.distance || 999) - (b.distance || 999));
   }
   
@@ -273,7 +274,7 @@ async function performSearch(query, station = null, radiusKm = DEFAULT_RADIUS_KM
   const searchType = detectSearchType(query);
   
   if (searchType === API_PROVIDERS.OVERPASS) {
-    return searchOverpass(query, bounds, station);
+    return searchOverpass(query, bounds, station, radiusKm);
   } else {
     return searchNominatim(query);
   }

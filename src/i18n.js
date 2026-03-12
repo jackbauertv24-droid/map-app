@@ -33,7 +33,17 @@ const I18N = {
       selectLine: '選擇路綫',
       selectStation: '選擇車站',
       meters: '米',
-      kilometers: '公里'
+      kilometers: '公里',
+      line_island: '港島綫',
+      line_tsuen_wan: '荃灣綫',
+      line_kwun_tong: '觀塘綫',
+      line_tuen_ma: '屯馬綫',
+      line_tung_chung: '東涌綫',
+      line_south_island: '南港島綫',
+      line_east_rail: '東鐵綫',
+      line_west_rail: '西鐵綫',
+      line_tseung_kwan_o: '將軍澳綫',
+      line_airport_express: '機場快綫'
     },
     'en': {
       appTitle: 'Map App',
@@ -60,7 +70,17 @@ const I18N = {
       selectLine: 'Select Line',
       selectStation: 'Select Station',
       meters: 'm',
-      kilometers: 'km'
+      kilometers: 'km',
+      line_island: 'Island Line',
+      line_tsuen_wan: 'Tsuen Wan Line',
+      line_kwun_tong: 'Kwun Tong Line',
+      line_tuen_ma: 'Tuen Ma Line',
+      line_tung_chung: 'Tung Chung Line',
+      line_south_island: 'South Island Line',
+      line_east_rail: 'East Rail Line',
+      line_west_rail: 'West Rail Line',
+      line_tseung_kwan_o: 'Tseung Kwan O Line',
+      line_airport_express: 'Airport Express'
     }
   },
   

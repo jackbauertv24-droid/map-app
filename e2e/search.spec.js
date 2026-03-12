@@ -36,7 +36,7 @@ test.describe('Map App - Dropdowns', () => {
     await page.locator('#regionSelect').selectOption('hong_kong_island');
     await expect(page.locator('#lineSelect')).not.toBeDisabled();
     const options = await page.locator('#lineSelect option').allTextContents();
-    expect(options).toContain('Island Line');
+    expect(options).toContain('港島綫');
   });
 
   test('Island Line populates stations', async ({ page }) => {
@@ -45,6 +45,7 @@ test.describe('Map App - Dropdowns', () => {
     await expect(page.locator('#stationSelect')).not.toBeDisabled();
     const options = await page.locator('#stationSelect option').allTextContents();
     expect(options).toContain('Central');
+    expect(options.length).toBeGreaterThan(1);
   });
 
   test('station selection shows filter badge', async ({ page }) => {

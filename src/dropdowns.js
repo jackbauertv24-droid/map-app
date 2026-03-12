@@ -16,6 +16,26 @@ function getCurrentLang() {
   return window.I18N && window.I18N.currentLang ? window.I18N.currentLang : 'zh-HK';
 }
 
+function getLineName(lineKey) {
+  const i18nKey = `line_${lineKey}`;
+  if (window.I18N && typeof window.I18N.t === 'function') {
+    return window.I18N.t(i18nKey);
+  }
+  const fallbackNames = {
+    island: 'Island Line',
+    tsuen_wan: 'Tsuen Wan Line',
+    kwun_tong: 'Kwun Tong Line',
+    tuen_ma: 'Tuen Ma Line',
+    tung_chung: 'Tung Chung Line',
+    south_island: 'South Island Line',
+    east_rail: 'East Rail Line',
+    west_rail: 'West Rail Line',
+    tseung_kwan_o: 'Tseung Kwan O Line',
+    airport_express: 'Airport Express'
+  };
+  return fallbackNames[lineKey] || lineKey;
+}
+
 function initMTRDropdowns() {
   if (!window.MTR_DATA) {
     console.error('MTR_DATA not loaded. Ensure mtr-stations.js is loaded before dropdowns.js');
@@ -49,10 +69,9 @@ function initMTRDropdowns() {
     
     lineSelect.innerHTML = `<option value="">${t('selectLine')}</option>`;
     Object.keys(region.lines).forEach(lineKey => {
-      const line = region.lines[lineKey];
       const option = document.createElement('option');
       option.value = lineKey;
-      option.textContent = line.name;
+      option.textContent = getLineName(lineKey);
       lineSelect.appendChild(option);
     });
     lineSelect.disabled = false;
@@ -139,6 +158,25 @@ function initMTRDropdowns() {
     const stationDefaultOption = stationSelect.querySelector('option[value=""]');
     if (stationDefaultOption) {
       stationDefaultOption.textContent = t('selectStation');
+    }
+    
+    // Re-populate line options with translated names
+    const regionKey = regionSelect.value;
+    if (regionKey && !lineSelect.disabled) {
+      const region = window.MTR_DATA[regionKey];
+      if (region) {
+        const selectedLine = lineSelect.value;
+        lineSelect.innerHTML = `<option value="">${t('selectLine')}</option>`;
+        Object.keys(region.lines).forEach(lineKey => {
+          const option = document.createElement('option');
+          option.value = lineKey;
+          option.textContent = getLineName(lineKey);
+          lineSelect.appendChild(option);
+        });
+        if (selectedLine) {
+          lineSelect.value = selectedLine;
+        }
+      }
     }
   });
 }
