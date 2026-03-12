@@ -127,9 +127,13 @@
     <script src="src/search.js"></script>
     <script>
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => I18N.init());
+            document.addEventListener('DOMContentLoaded', () => {
+                I18N.init();
+                MapVisualizer.init();
+            });
         } else {
             I18N.init();
+            MapVisualizer.init();
         }
     </script>
 </body>
