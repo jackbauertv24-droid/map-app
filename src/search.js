@@ -22,7 +22,7 @@ const POI_KEYWORDS = [
   'park', 'museum', 'shopping', 'mall', 'station',
   'bank', 'atm', 'pharmacy', 'supermarket', 'gym',
   '麥當勞', '餐廳', '咖啡', '酒店', '醫院', '學校',
-  '公園', '博物館', '購物', '商場', '車站',
+  '公園', '博物館', '購物', '商場', '車站', '巴士',
   '銀行', '診所', '藥房', '超市', '健身'
 ];
 
@@ -206,12 +206,20 @@ function buildOverpassQuery(query, bounds = HK_BOUNDS) {
   // Extract POI type and location from query
   let poiType = 'fast_food';
   let namePattern = query;
+  let useMultiTagQuery = false;
   
   // Check if query matches a Chinese amenity term first
   for (const [zhTerm, amenity] of Object.entries(CHINESE_TO_AMENITY)) {
     if (lowerQuery === zhTerm.toLowerCase() || lowerQuery.includes(zhTerm.toLowerCase())) {
       poiType = amenity;
       namePattern = '';
+      
+      // Special handling for transportation hubs that use different tagging schemes
+      if (amenity === 'bus_station') {
+        useMultiTagQuery = true;
+      } else if (amenity === 'ferry_terminal') {
+        useMultiTagQuery = true;
+      }
       break;
     }
   }
@@ -243,7 +251,20 @@ function buildOverpassQuery(query, bounds = HK_BOUNDS) {
   let queryStr = `[out:json][timeout:25];`;
   queryStr += `(`;
   
-  if (namePattern) {
+  if (useMultiTagQuery && poiType === 'bus_station') {
+    // Bus terminals in HK are mostly tagged as highway=bus_stop with names containing 總站
+    // Also include amenity=bus_station
+    queryStr += `node["amenity"="bus_station"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
+    queryStr += `way["amenity"="bus_station"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
+    // Search for bus stops with names containing 總站 (most common in HK)
+    queryStr += `node["highway"="bus_stop"]["name"~"總站"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
+  } else if (useMultiTagQuery && poiType === 'ferry_terminal') {
+    // Ferry terminals may use amenity=ferry_terminal or public_transport=station + ferry=yes
+    queryStr += `node["amenity"="ferry_terminal"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
+    queryStr += `way["amenity"="ferry_terminal"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
+    queryStr += `node["public_transport"="station"]["ferry"="yes"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
+    queryStr += `node["amenity"="ferry_terminal"](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
+  } else if (namePattern) {
     // Search by name pattern
     queryStr += `node["amenity"="${poiType}"]["name"~"${namePattern}",i](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
     queryStr += `way["amenity"="${poiType}"]["name"~"${namePattern}",i](${bounds.latMin},${bounds.lonMin},${bounds.latMax},${bounds.lonMax});`;
