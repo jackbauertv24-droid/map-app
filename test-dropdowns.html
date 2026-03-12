@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Dropdowns</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        select { margin: 5px; padding: 8px; }
+        .pass { color: green; }
+        .fail { color: red; }
+    </style>
+</head>
+<body>
+    <h1>MTR Dropdown Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: MTR_DATA loads correctly</h2>
+        <div id="test1-result">Waiting...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Dropdown elements exist</h2>
+        <div id="test2-result">Waiting...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Region selection enables Line dropdown</h2>
+        <div id="test3-result">Waiting...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Manual Test</h2>
+        <div class="dropdown-row">
+            <select id="regionSelect">
+                <option value="">All Hong Kong</option>
+                <option value="hong_kong_island">Hong Kong Island</option>
+                <option value="kowloon">Kowloon</option>
+                <option value="new_territories">New Territories</option>
+            </select>
+            
+            <select id="lineSelect" disabled>
+                <option value="">Select Line</option>
+            </select>
+            
+            <select id="stationSelect" disabled>
+                <option value="">Select Station</option>
+            </select>
+        </div>
+        <p><strong>Try selecting:</strong> Hong Kong Island → Line dropdown should enable → Select Island Line → Station dropdown should enable</p>
+    </div>
+    
+    <script src="src/mtr-stations.js"></script>
+    <script>
+        // Test 1: MTR_DATA loads
+        setTimeout(() => {
+            const test1 = document.getElementById('test1-result');
+            if (typeof window.MTR_DATA !== 'undefined' && window.MTR_DATA.hong_kong_island) {
+                test1.innerHTML = '<span class="pass">✓ PASS</span> - MTR_DATA loaded with ' + Object.keys(window.MTR_DATA).length + ' regions';
+            } else {
+                test1.innerHTML = '<span class="fail">✗ FAIL</span> - MTR_DATA not loaded properly';
+                console.log('MTR_DATA:', window.MTR_DATA);
+            }
+        }, 100);
+        
+        // Test 2: Dropdown elements exist
+        setTimeout(() => {
+            const test2 = document.getElementById('test2-result');
+            const regionSelect = document.getElementById('regionSelect');
+            const lineSelect = document.getElementById('lineSelect');
+            const stationSelect = document.getElementById('stationSelect');
+            
+            if (regionSelect && lineSelect && stationSelect) {
+                test2.innerHTML = '<span class="pass">✓ PASS</span> - All dropdown elements found';
+            } else {
+                test2.innerHTML = '<span class="fail">✗ FAIL</span> - Missing dropdown elements';
+            }
+        }, 200);
+        
+        // Test 3: Region selection enables Line dropdown
+        setTimeout(() => {
+            const test3 = document.getElementById('test3-result');
+            const regionSelect = document.getElementById('regionSelect');
+            const lineSelect = document.getElementById('lineSelect');
+            
+            if (!regionSelect || !lineSelect) {
+                test3.innerHTML = '<span class="fail">✗ FAIL</span> - Cannot test, elements missing';
+                return;
+            }
+            
+            // Simulate region selection
+            regionSelect.value = 'hong_kong_island';
+            const event = new Event('change');
+            regionSelect.dispatchEvent(event);
+            
+            setTimeout(() => {
+                if (!lineSelect.disabled && lineSelect.options.length > 1) {
+                    test3.innerHTML = '<span class="pass">✓ PASS</span> - Line dropdown enabled with ' + (lineSelect.options.length - 1) + ' lines';
+                } else {
+                    test3.innerHTML = '<span class="fail">✗ FAIL</span> - Line dropdown still disabled or empty (disabled=' + lineSelect.disabled + ', options=' + lineSelect.options.length + ')';
+                    console.log('Line select state:', {
+                        disabled: lineSelect.disabled,
+                        options: lineSelect.options.length,
+                        innerHTML: lineSelect.innerHTML
+                    });
+                }
+            }, 100);
+        }, 300);
+    </script>
+    <script src="src/dropdowns.js"></script>
+</body>
+</html>
