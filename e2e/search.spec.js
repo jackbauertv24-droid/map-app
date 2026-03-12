@@ -266,7 +266,8 @@ test.describe('Map App - Traditional Chinese UI Verification', () => {
     expect(options).toContain('東鐵綫');
     expect(options).toContain('東涌綫');
     expect(options).toContain('將軍澳綫');
-    expect(options).toContain('西鐵綫');
+    expect(options).toContain('機場快綫');
+    expect(options).not.toContain('西鐵綫');
   });
 
   test('radius dropdown displays in Traditional Chinese', async ({ page }) => {
