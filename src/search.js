@@ -26,6 +26,79 @@ const POI_KEYWORDS = [
   '銀行', '診所', '藥房', '超市', '健身'
 ];
 
+// Map Chinese search terms to OSM amenity types
+const CHINESE_TO_AMENITY = {
+  '餐廳': 'restaurant',
+  '咖啡館': 'cafe',
+  '快餐店': 'fast_food',
+  '酒吧': 'bar',
+  '酒館': 'pub',
+  '啤酒花園': 'biergarten',
+  '美食廣場': 'food_court',
+  '冰淇淋店': 'ice_cream',
+  '學校': 'school',
+  '大學': 'university',
+  '學院': 'college',
+  '幼兒園': 'kindergarten',
+  '圖書館': 'library',
+  '語言學校': 'language_school',
+  '音樂學校': 'music_school',
+  '駕駛學校': 'driving_school',
+  '醫院': 'hospital',
+  '診所': 'clinic',
+  '藥房': 'pharmacy',
+  '牙醫': 'dentist',
+  '醫生': 'doctors',
+  '獸醫': 'veterinary',
+  '停車場': 'parking',
+  '單車停泊處': 'bicycle_parking',
+  '單車租賃': 'bicycle_rental',
+  '汽車租賃': 'car_rental',
+  '洗車場': 'car_wash',
+  '充電站': 'charging_station',
+  '加油站': 'fuel',
+  '的士站': 'taxi',
+  '巴士總站': 'bus_station',
+  '渡輪碼頭': 'ferry_terminal',
+  '銀行': 'bank',
+  '自動櫃員機': 'atm',
+  '貨幣兌換': 'bureau_de_change',
+  '電影院': 'cinema',
+  '劇院': 'theatre',
+  '博物館': 'museum',
+  '畫廊': 'gallery',
+  '賭場': 'casino',
+  '夜總會': 'nightclub',
+  '郵局': 'post_office',
+  '警察局': 'police',
+  '消防局': 'fire_station',
+  '市政廳': 'townhall',
+  '法院': 'courthouse',
+  '社區中心': 'community_centre',
+  '洗手間': 'toilets',
+  '淋浴間': 'shower',
+  '飲用水': 'drinking_water',
+  '長椅': 'bench',
+  '涼亭': 'shelter',
+  '街市': 'marketplace',
+  '購物中心': 'shopping_centre',
+  '健身中心': 'gym',
+  '游泳池': 'swimming_pool',
+  '體育館': 'sports_centre',
+  '兒童遊樂場': 'playground',
+  '公園': 'park',
+  '宗教場所': 'place_of_worship',
+  '酒店': 'hotel',
+  '青年旅舍': 'hostel',
+  '賓館': 'guest_house',
+  '汽車旅館': 'motel',
+  '旅遊資訊': 'tourist_information',
+  '網吧': 'internet_cafe',
+  '公共電話': 'phone',
+  '回收站': 'recycling',
+  '垃圾桶': 'waste_basket'
+};
+
 // Current active station filter (shared via window object)
 function getActiveStationFilter() {
   return window.activeStationFilter || null;
@@ -134,25 +207,36 @@ function buildOverpassQuery(query, bounds = HK_BOUNDS) {
   let poiType = 'fast_food';
   let namePattern = query;
   
-  // Map common POI terms to OSM tags (English and Traditional Chinese)
-  if (lowerQuery.includes('mcdonald') || lowerQuery.includes('麥當勞')) {
-    poiType = 'fast_food';
-    namePattern = 'McDonald';
-  } else if (lowerQuery.includes('burger')) {
-    poiType = 'fast_food';
-    namePattern = 'Burger';
-  } else if (lowerQuery.includes('restaurant') || lowerQuery.includes('餐廳')) {
-    poiType = 'restaurant';
-    namePattern = '';
-  } else if (lowerQuery.includes('cafe') || lowerQuery.includes('coffee') || lowerQuery.includes('咖啡')) {
-    poiType = 'cafe';
-    namePattern = '';
-  } else if (lowerQuery.includes('hotel') || lowerQuery.includes('酒店')) {
-    poiType = 'hotel';
-    namePattern = '';
-  } else if (lowerQuery.includes('fast_food') || lowerQuery.includes('快餐')) {
-    poiType = 'fast_food';
-    namePattern = '';
+  // Check if query matches a Chinese amenity term first
+  for (const [zhTerm, amenity] of Object.entries(CHINESE_TO_AMENITY)) {
+    if (lowerQuery === zhTerm.toLowerCase() || lowerQuery.includes(zhTerm.toLowerCase())) {
+      poiType = amenity;
+      namePattern = '';
+      break;
+    }
+  }
+  
+  // If no Chinese match, check English terms
+  if (namePattern === query) {
+    if (lowerQuery.includes('mcdonald') || lowerQuery.includes('麥當勞')) {
+      poiType = 'fast_food';
+      namePattern = 'McDonald';
+    } else if (lowerQuery.includes('burger')) {
+      poiType = 'fast_food';
+      namePattern = 'Burger';
+    } else if (lowerQuery.includes('restaurant')) {
+      poiType = 'restaurant';
+      namePattern = '';
+    } else if (lowerQuery.includes('cafe') || lowerQuery.includes('coffee')) {
+      poiType = 'cafe';
+      namePattern = '';
+    } else if (lowerQuery.includes('hotel')) {
+      poiType = 'hotel';
+      namePattern = '';
+    } else if (lowerQuery.includes('fast_food') || lowerQuery.includes('快餐')) {
+      poiType = 'fast_food';
+      namePattern = '';
+    }
   }
   
   // Build Overpass QL query
@@ -428,6 +512,40 @@ function clearStationFilter() {
 }
 
 /**
+ * Initialize amenity suggestions
+ */
+function initAmenitySuggestions() {
+  const suggestionsDiv = document.getElementById('amenitySuggestions');
+  const searchInput = document.getElementById('searchInput');
+  
+  if (!suggestionsDiv || !searchInput) {
+    return;
+  }
+  
+  // Get random 10 amenities
+  const amenities = getRandomAmenities(10);
+  
+  // Create chips
+  suggestionsDiv.innerHTML = '';
+  amenities.forEach(amenity => {
+    const chip = document.createElement('span');
+    chip.className = 'amenity-chip';
+    chip.textContent = amenity.zh;
+    chip.title = amenity.en;
+    chip.addEventListener('click', () => {
+      searchInput.value = amenity.zh;
+      searchInput.focus();
+      // Trigger search after a short delay to ensure value is set
+      setTimeout(() => {
+        const searchBtn = document.getElementById('searchBtn');
+        if (searchBtn) searchBtn.click();
+      }, 100);
+    });
+    suggestionsDiv.appendChild(chip);
+  });
+}
+
+/**
  * Initialize search functionality
  */
 function initSearch() {
@@ -439,6 +557,9 @@ function initSearch() {
     console.error('Search elements not found');
     return;
   }
+  
+  // Initialize amenity suggestions
+  initAmenitySuggestions();
   
   // Search function
   function doSearch() {
@@ -510,7 +631,9 @@ if (typeof module !== 'undefined' && module.exports) {
     formatDistance,
     API_PROVIDERS,
     POI_KEYWORDS,
+    CHINESE_TO_AMENITY,
     HK_BOUNDS,
-    DEFAULT_RADIUS_KM
+    DEFAULT_RADIUS_KM,
+    initAmenitySuggestions
   };
 }
