@@ -5,9 +5,10 @@
  * Get translated text from i18n
  */
 function t(key) {
-  if (window.I18N) {
+  if (window.I18N && typeof window.I18N.t === 'function') {
     return window.I18N.t(key);
   }
+  // Fallback defaults
   const defaults = {
     selectLine: '選擇路綫',
     selectStation: '選擇車站'
@@ -19,24 +20,17 @@ function t(key) {
  * Get current language
  */
 function getCurrentLang() {
-  return window.I18N ? window.I18N.currentLang : 'zh-HK';
-}
-
-/**
- * Translate line name to current language
- * For now, line names stay in English as they are proper nouns
- * But we can add translations if needed
- */
-function translateLineName(lineName) {
-  // Line names are proper nouns, keep as-is
-  // Could add translations here if desired
-  return lineName;
+  return window.I18N && window.I18N.currentLang ? window.I18N.currentLang : 'zh-HK';
 }
 
 /**
  * Initialize MTR dropdown cascade
  */
 function initMTRDropdowns() {
+  console.log('[dropdowns] initMTRDropdowns called');
+  console.log('[dropdowns] window.MTR_DATA exists:', !!window.MTR_DATA);
+  console.log('[dropdowns] window.I18N exists:', !!window.I18N);
+  
   if (!window.MTR_DATA) {
     console.error('MTR_DATA not loaded. Ensure mtr-stations.js is loaded before dropdowns.js');
     return;
@@ -54,6 +48,9 @@ function initMTRDropdowns() {
   
   // Region change → populate lines
   regionSelect.addEventListener('change', () => {
+    console.log('[dropdowns] Region changed to:', regionSelect.value);
+    console.log('[dropdowns] I18N state:', window.I18N ? window.I18N.currentLang : 'not initialized');
+    
     const regionKey = regionSelect.value;
     
     if (!regionKey) {
@@ -74,7 +71,7 @@ function initMTRDropdowns() {
       const line = region.lines[lineKey];
       const option = document.createElement('option');
       option.value = lineKey;
-      option.textContent = line.name; // Keep line names in English (proper nouns)
+      option.textContent = line.name;
       lineSelect.appendChild(option);
     });
     lineSelect.disabled = false;
@@ -160,6 +157,7 @@ function initMTRDropdowns() {
   
   // Listen for language changes to update dropdown placeholders
   window.addEventListener('languageChanged', () => {
+    console.log('[dropdowns] Language changed event received');
     // Update line select placeholder
     const lineDefaultOption = lineSelect.querySelector('option[value=""]');
     if (lineDefaultOption) {

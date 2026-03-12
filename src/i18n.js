@@ -61,10 +61,14 @@ const I18N = {
   },
   
   init() {
+    console.log('[i18n] init() called, currentLang:', this.currentLang);
+    console.log('[i18n] document.readyState:', document.readyState);
+    
     // Check for saved language preference or use default
     const savedLang = localStorage.getItem('preferredLang');
     if (savedLang && this.translations[savedLang]) {
       this.currentLang = savedLang;
+      console.log('[i18n] Loaded saved language:', savedLang);
     }
     
     // Apply translations
@@ -72,12 +76,18 @@ const I18N = {
   },
   
   t(key) {
-    return this.translations[this.currentLang][key] || this.translations['zh-HK'][key] || key;
+    const result = this.translations[this.currentLang][key] || this.translations['zh-HK'][key] || key;
+    return result;
   },
   
   translatePage() {
+    console.log('[i18n] translatePage() called, currentLang:', this.currentLang);
+    
     // Translate elements with data-i18n attribute
-    document.querySelectorAll('[data-i18n]').forEach(el => {
+    const elements = document.querySelectorAll('[data-i18n]');
+    console.log('[i18n] Found', elements.length, 'elements with data-i18n');
+    
+    elements.forEach(el => {
       const key = el.getAttribute('data-i18n');
       const text = this.t(key);
       
@@ -107,9 +117,12 @@ const I18N = {
     if (langSelect) {
       langSelect.value = this.currentLang;
     }
+    
+    console.log('[i18n] translatePage() completed');
   },
   
   setLanguage(lang) {
+    console.log('[i18n] setLanguage() called:', lang);
     if (this.translations[lang]) {
       this.currentLang = lang;
       localStorage.setItem('preferredLang', lang);
