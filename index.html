@@ -118,18 +118,7 @@
                 <input id="searchInput" type="text" data-i18n="searchPlaceholder" placeholder="輸入地點或地址 (例如：麥當勞，餐廳)"/>
                 <button id="searchBtn" data-i18n="searchBtn">搜尋</button>
             </div>
-            <div class="search-options" style="display:flex; align-items:center; gap:0.75rem; margin-top:0.75rem; flex-wrap:wrap;">
-                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.9rem;">
-                    <input type="checkbox" id="useGoogleMaps" style="width:auto; margin:0;" />
-                    <span data-i18n="useGoogleMaps">使用 Google 地圖 (更多結果)</span>
-                </label>
-                <button id="clearCacheBtn" style="background:#f5f5f5; border:1px solid #ddd; border-radius:4px; padding:0.4rem 0.8rem; font-size:0.85rem; cursor:pointer; color:#666;" data-i18n="clearCache">清除快取</button>
-            </div>
             <div id="amenitySuggestions" class="amenity-suggestions"></div>
-            <div id="searchProgress" style="display:none; margin-top:1rem; padding:0.75rem; background:#e8f4fd; border-left:4px solid #3498db; border-radius:4px; color:#2c3e50;">
-                <span style="display:inline-block; animation:spin 1s linear infinite; margin-right:0.5rem;">🔄</span>
-                <span data-i18n="searchingGoogleMaps">正在搜尋 Google 地圖...</span>
-            </div>
         </div>
         
         <div id="activeFilter" class="filter-badge" style="display:none;">
@@ -144,7 +133,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     <script src="src/map-visualizer.js"></script>
-    <script src="src/google-maps-search.js"></script>
     <script src="src/i18n.js"></script>
     <script src="src/amenity-suggestions.js"></script>
     <script src="src/mtr-stations.js"></script>
@@ -155,43 +143,10 @@
             document.addEventListener('DOMContentLoaded', () => {
                 I18N.init();
                 MapVisualizer.init();
-                GoogleMapsSearch.loadFromLocalStorage();
-                setupGoogleMapsUI();
             });
         } else {
             I18N.init();
             MapVisualizer.init();
-            GoogleMapsSearch.loadFromLocalStorage();
-            setupGoogleMapsUI();
-        }
-        
-        function setupGoogleMapsUI() {
-            // Clear cache button
-            const clearCacheBtn = document.getElementById('clearCacheBtn');
-            if (clearCacheBtn) {
-                clearCacheBtn.addEventListener('click', () => {
-                    GoogleMapsSearch.clearCache();
-                    clearCacheBtn.textContent = '✓ 已清除';
-                    setTimeout(() => {
-                        clearCacheBtn.textContent = I18N.t('clearCache');
-                    }, 2000);
-                });
-            }
-            
-            // Save Google Maps toggle preference
-            const useGoogleMapsCheckbox = document.getElementById('useGoogleMaps');
-            if (useGoogleMapsCheckbox) {
-                // Load saved preference
-                const saved = localStorage.getItem('useGoogleMaps');
-                if (saved === 'true') {
-                    useGoogleMapsCheckbox.checked = true;
-                }
-                
-                // Save preference on change
-                useGoogleMapsCheckbox.addEventListener('change', () => {
-                    localStorage.setItem('useGoogleMaps', useGoogleMapsCheckbox.checked);
-                });
-            }
         }
     </script>
 </body>
